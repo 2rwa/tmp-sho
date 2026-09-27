@@ -1,0 +1,73 @@
+name: Diagnose and deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "index.html"
+      - "experiments.html"
+      - "references.html"
+      - ".github/workflows/pages-diagnose-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      build_type: ${{ steps.pages.outputs.build_type }}
+      source_branch: ${{ steps.pages.outputs.source_branch }}
+      source_path: ${{ steps.pages.outputs.source_path }}
+      html_url: ${{ steps.pages.outputs.html_url }}
+    steps:
+      - name: Inspect Pages configuration
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/pages" > /tmp/pages.json
+          cat /tmp/pages.json | jq .
+          echo "build_type=$(jq -r '.build_type // "unknown"' /tmp/pages.json)" >> "$GITHUB_OUTPUT"
+          echo "source_branch=$(jq -r '.source.branch // ""' /tmp/pages.json)" >> "$GITHUB_OUTPUT"
+          echo "source_path=$(jq -r '.source.path // ""' /tmp/pages.json)" >> "$GITHUB_OUTPUT"
+          echo "html_url=$(jq -r '.html_url // ""' /tmp/pages.json)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: inspect
+    if: needs.inspect.outputs.build_type == 'workflow'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload public site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  report:
+    needs: [inspect, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report configuration
+        run: |
+          echo "build_type=${{ needs.inspect.outputs.build_type }}"
+          echo "source_branch=${{ needs.inspect.outputs.source_branch }}"
+          echo "source_path=${{ needs.inspect.outputs.source_path }}"
+          echo "html_url=${{ needs.inspect.outputs.html_url }}"
+          echo "deploy_result=${{ needs.deploy.result }}"
