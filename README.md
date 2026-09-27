@@ -3,7 +3,7 @@
 笙（shō）の調査・物理音源開発で使う **一時計算 / 長時間 GitHub Actions 用 public repository**。
 
 本体・検証済み資料の保管先は `2rwa/audio-synthesis-lab/projects/sho-physical-synth/`。
-この repository は、重い処理を遠慮なく回して失敗も残すための作業場として使う。
+この repository は、長時間処理や検証の途中結果を公開し、Pages / Actions artifacts 経由で共有・再確認しながら試行錯誤を進める作業場として使う。
 
 ## 役割
 
