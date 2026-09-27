@@ -1,0 +1,47 @@
+name: Shō zero-source passivity map
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/passivity-map.mjs.part"
+      - ".github/workflows/sho-passivity-map.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  map:
+    strategy:
+      fail-fast: false
+      matrix:
+        sample_rate: [24000, 48000, 96000, 192000]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble exact-zero runner
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src: raise SystemExit('library marker not found')
+          s=src.split(marker,1)[0]+'\n'
+          s=s.replace("const sampleRate = 48000;","const sampleRate = ${{ matrix.sample_rate }};")
+          s=s.replace("const absolutePressure = Math.max(Math.abs(pressureDifference), 1e-5);","const absolutePressure = Math.abs(pressureDifference);")
+          s=s.replace("const pressureSign = pressureDifference >= 0 ? 1 : -1;","const pressureSign = pressureDifference === 0 ? 0 : (pressureDifference > 0 ? 1 : -1);")
+          Path('/tmp/lib.mjs').write_text(s)
+          PY
+          cat /tmp/lib.mjs scripts/wave4/passivity-map.mjs.part > /tmp/test.mjs
+          node --check /tmp/test.mjs
+      - name: Run passivity map
+        run: node /tmp/test.mjs --out=results-passivity-map
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sho-passivity-map-${{ matrix.sample_rate }}-${{ github.run_id }}
+          path: results-passivity-map/
+          retention-days: 14

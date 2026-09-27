@@ -1,0 +1,43 @@
+
+const outArg=process.argv.find(x=>x.startsWith('--out='));
+const outDir=path.resolve(outArg?outArg.slice(6):'results-passivity-map');
+fs.mkdirSync(outDir,{recursive:true});
+
+function f0Estimate(v){
+  if(v.length<1000)return null;
+  let mean=0;for(const x of v)mean+=x;mean/=v.length;
+  const minLag=Math.floor(sampleRate/800),maxLag=Math.ceil(sampleRate/250);
+  let best=-Infinity,bestLag=0;
+  for(let lag=minLag;lag<=maxLag;lag++){
+    let xy=0,xx=0,yy=0;
+    for(let i=lag;i<v.length;i++){
+      const a=v[i]-mean,b=v[i-lag]-mean;xy+=a*b;xx+=a*a;yy+=b*b;
+    }
+    const c=xy/Math.sqrt(Math.max(xx*yy,1e-30));
+    if(c>best){best=c;bestLag=lag;}
+  }
+  return {hz:bestLag?sampleRate/bestLag:null,corr:Number.isFinite(best)?best:0};
+}
+function one(reflection,direction,pressure){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const p=new ShoPipeModel(note);p.gateTarget=1;
+  const params={...baseParams,reflection};
+  for(let i=0;i<sampleRate*2;i++)p.renderOne(direction*pressure,params);
+  const total=Math.floor(sampleRate*2),start=Math.floor(sampleRate*1.5),tail=[];
+  for(let i=0;i<total;i++){
+    const y=p.renderOne(0,params)*0.00062;
+    if(i>=start)tail.push(y);
+  }
+  const rr=rms(tail),ff=f0Estimate(tail);
+  return {sample_rate_hz:sampleRate,reflection,direction:direction>0?'blow':'draw',
+    excite_pressure_pa:pressure,rms_last_500ms:rr,f0_hz:ff?.hz??null,corr:ff?.corr??0};
+}
+const reflections=[0,0.25,0.5,0.7,0.8,0.9,0.94,0.96,0.97,0.98,0.985,0.99,0.995];
+const rows=[];
+for(const r of reflections){
+  rows.push(one(r,1,370));
+  rows.push(one(r,-1,90));
+}
+const result={schema:'sho-zero-source-passivity-map-v1',sample_rate_hz:sampleRate,rows};
+fs.writeFileSync(path.join(outDir,'result.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify(result,null,2)+'\n');
