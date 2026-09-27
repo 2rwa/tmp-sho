@@ -5,18 +5,6 @@
   "base_url": "https://2rwa.github.io/tmp-sho/",
   "datasets": [
     {
-      "task": "blow-draw-asymmetry",
-      "run_id": "36286542589",
-      "source_commit": "2ecbffccf5ebe7c3a52e942779488366cd73d8a4",
-      "path": "data/blow-draw-asymmetry/36286542589/",
-      "files": [
-        "summary.json",
-        "summary.csv",
-        "index.html"
-      ],
-      "latest": "data/blow-draw-asymmetry/latest.json"
-    },
-    {
       "task": "kashira-coupling",
       "run_id": "36289326645",
       "source_commit": "c6a610359f628afdfd017498a26b3c2753c78f63",
@@ -27,6 +15,18 @@
         "index.html"
       ],
       "latest": "data/kashira-coupling/latest.json"
+    },
+    {
+      "task": "blow-draw-asymmetry",
+      "run_id": "36289326612",
+      "source_commit": "c6a610359f628afdfd017498a26b3c2753c78f63",
+      "path": "data/blow-draw-asymmetry/36289326612/",
+      "files": [
+        "summary.json",
+        "summary.csv",
+        "index.html"
+      ],
+      "latest": "data/blow-draw-asymmetry/latest.json"
     }
   ],
   "notes": [
