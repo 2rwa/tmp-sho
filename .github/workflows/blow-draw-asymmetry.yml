@@ -1,0 +1,81 @@
+name: Shō blow/draw asymmetry sweep
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/sweep-blow-draw-asymmetry.mjs"
+      - ".github/workflows/blow-draw-asymmetry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Cheap preflight
+        run: node --check scripts/sweep-blow-draw-asymmetry.mjs
+
+      - name: Sync main before generating results
+        run: git pull --rebase origin main
+
+      - name: Run full asymmetry parameter sweep
+        run: node scripts/sweep-blow-draw-asymmetry.mjs --out=results
+
+      - name: Upload full sweep artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-blow-draw-asymmetry-${{ github.run_id }}
+          path: results/
+          retention-days: 14
+
+      - name: Publish compact Pages result
+        if: success()
+        env:
+          RUN_ID: ${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          dest="data/blow-draw-asymmetry/${RUN_ID}"
+          mkdir -p "$dest"
+          cp results/summary.json "$dest/summary.json"
+          cp results/summary.csv "$dest/summary.csv"
+          cp results/index.html "$dest/index.html"
+          cp results/summary.json data/blow-draw-asymmetry/latest.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('data/index.json')
+          data = json.loads(p.read_text())
+          run_id = os.environ['RUN_ID']
+          entry = {
+              'task': 'blow-draw-asymmetry',
+              'run_id': run_id,
+              'source_commit': os.environ['SOURCE_SHA'],
+              'path': f'data/blow-draw-asymmetry/{run_id}/',
+              'files': ['summary.json', 'summary.csv', 'index.html'],
+              'latest': 'data/blow-draw-asymmetry/latest.json'
+          }
+          datasets = [x for x in data.get('datasets', []) if x.get('task') != entry['task']]
+          datasets.append(entry)
+          data['datasets'] = datasets
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/index.json data/blow-draw-asymmetry
+          if git diff --cached --quiet; then
+            echo "No compact result changes to publish"
+            exit 0
+          fi
+          git commit -m "Publish shō blow/draw asymmetry sweep ${RUN_ID}"
+          git push origin HEAD:main
