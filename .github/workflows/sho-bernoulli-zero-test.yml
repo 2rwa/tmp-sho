@@ -1,0 +1,61 @@
+name: Shō Bernoulli zero-pressure root-cause test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/bernoulli-zero-test.mjs.part"
+      - ".github/workflows/sho-bernoulli-zero-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [current, exact-zero]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src: raise SystemExit('library marker not found')
+          Path('/tmp/lib.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+      - name: Apply Bernoulli variant
+        if: matrix.mode == 'exact-zero'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/lib.mjs')
+          s=p.read_text()
+          a="const absolutePressure = Math.max(Math.abs(pressureDifference), 1e-5);"
+          b="const absolutePressure = Math.abs(pressureDifference);"
+          c="const pressureSign = pressureDifference >= 0 ? 1 : -1;"
+          d="const pressureSign = pressureDifference === 0 ? 0 : (pressureDifference > 0 ? 1 : -1);"
+          if a not in s or c not in s: raise SystemExit('Bernoulli anchors not found')
+          p.write_text(s.replace(a,b).replace(c,d))
+          PY
+      - name: Run comparison
+        env:
+          BERNOULLI_MODE: ${{ matrix.mode }}
+        run: |
+          cat /tmp/lib.mjs scripts/wave4/bernoulli-zero-test.mjs.part > /tmp/test.mjs
+          node --check /tmp/test.mjs
+          node /tmp/test.mjs --out=results-bernoulli-zero
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sho-bernoulli-zero-${{ matrix.mode }}-${{ github.run_id }}
+          path: results-bernoulli-zero/
+          retention-days: 14

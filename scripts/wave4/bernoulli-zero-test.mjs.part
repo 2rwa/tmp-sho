@@ -1,0 +1,79 @@
+
+const outArg=process.argv.find(x=>x.startsWith('--out='));
+const outDir=path.resolve(outArg?outArg.slice(6):'results-bernoulli-zero');
+fs.mkdirSync(outDir,{recursive:true});
+
+function acF0(signal,fs){
+  let mean=0; for(const x of signal) mean+=x; mean/=Math.max(1,signal.length);
+  const minLag=Math.floor(fs/560), maxLag=Math.ceil(fs/380);
+  let bestLag=0,best=-Infinity;
+  for(let lag=minLag;lag<=maxLag;lag++){
+    let xy=0,xx=0,yy=0;
+    for(let i=lag;i<signal.length;i++){
+      const a=signal[i]-mean,b=signal[i-lag]-mean;
+      xy+=a*b;xx+=a*a;yy+=b*b;
+    }
+    const c=xy/Math.sqrt(Math.max(xx*yy,1e-30));
+    if(c>best){best=c;bestLag=lag;}
+  }
+  return {hz:bestLag?fs/bestLag:null,corr:Number.isFinite(best)?best:0};
+}
+function directIchi(direction,pressure,duration=2){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const p=new ShoPipeModel(note); p.gateTarget=1;
+  const total=Math.floor(sampleRate*duration), start=Math.floor(sampleRate*1.2);
+  const v=[]; let finite=true;
+  for(let i=0;i<total;i++){
+    const y=p.renderOne(direction*pressure,baseParams)*0.00062;
+    if(!Number.isFinite(y)) finite=false;
+    if(i>=start)v.push(y);
+  }
+  const rr=rms(v), f=acF0(v,sampleRate);
+  return {pressure_pa:pressure,direction:direction>0?'blow':'draw',finite,rms:rr,f0_hz:f.hz,corr:f.corr,oscillating:finite&&rr>1e-5&&f.corr>0.5};
+}
+function zeroFloor(){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const p=new ShoPipeModel(note); p.gateTarget=1;
+  const total=Math.floor(sampleRate*5), start=Math.floor(sampleRate*4.5);
+  const v=[];
+  for(let i=0;i<total;i++){
+    const y=p.renderOne(0,baseParams)*0.00062;
+    if(i>=start)v.push(y);
+  }
+  return {rms_last_500ms:rms(v),peak_last_500ms:Math.max(...v.map(Math.abs))};
+}
+function ringdown(direction,pressure){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const p=new ShoPipeModel(note); p.gateTarget=1;
+  for(let i=0;i<sampleRate*2;i++)p.renderOne(direction*pressure,baseParams);
+  const v=[];
+  for(let i=0;i<sampleRate*5;i++){
+    const y=p.renderOne(0,baseParams)*0.00062;
+    if(i>=sampleRate*4.5)v.push(y);
+  }
+  return {direction:direction>0?'blow':'draw',excite_pressure_pa:pressure,rms_last_500ms:rms(v),peak_last_500ms:Math.max(...v.map(Math.abs))};
+}
+const direct=[];
+for(const p of [360,368,370,372])direct.push(directIchi(1,p));
+for(const p of [80,88,90,92])direct.push(directIchi(-1,p));
+const shared={
+ single_blow_370:runAtKashiraTarget({names:['一'],targetKashiraPa:370,direction:1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.5}),
+ single_draw_90:runAtKashiraTarget({names:['一'],targetKashiraPa:90,direction:-1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.5}),
+ chord_blow_600:runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.5}),
+ chord_draw_600:runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:-1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.5})
+};
+const compactShared=Object.fromEntries(Object.entries(shared).map(([k,x])=>[k,{
+ finite:x.finite,required_mouth_pressure_pa:x.required_mouth_pressure_pa,target_error_pa:x.target_error_pa,
+ mean_abs_kashira_pa:x.mean_abs_kashira_pa,kashira_pressure_std_pa:x.kashira_pressure_std_pa,
+ all_pipes_oscillating:x.all_pipes_oscillating,pipe_metrics:x.pipe_metrics
+}]));
+const result={
+ schema:'sho-bernoulli-zero-pressure-test-v1',
+ mode:process.env.BERNOULLI_MODE||'unknown',
+ zero_floor:zeroFloor(),
+ ringdown:[ringdown(1,370),ringdown(-1,90),ringdown(1,600),ringdown(-1,600)],
+ direct,
+ shared:compactShared
+};
+fs.writeFileSync(path.join(outDir,'result.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify(result,null,2)+'\n');
