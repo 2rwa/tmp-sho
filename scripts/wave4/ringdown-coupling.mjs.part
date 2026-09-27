@@ -1,0 +1,51 @@
+
+const outArg=process.argv.find(x=>x.startsWith('--out='));
+const outDir=path.resolve(outArg?outArg.slice(6):'results-ringdown-coupling');
+fs.mkdirSync(outDir,{recursive:true});
+
+function runMode({direction,pressure,mode}){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note); pipe.gateTarget=1;
+  const exciteParams={...baseParams};
+  for(let i=0;i<sampleRate*2;i++) pipe.renderOne(direction*pressure,exciteParams);
+
+  const offParams={...baseParams};
+  if(mode==='reflection-zero') offParams.reflection=0;
+  if(mode==='low-q') offParams.reedQ=2;
+  if(mode==='low-q-reflection-zero'){offParams.reedQ=2;offParams.reflection=0;}
+  if(mode==='bernoulli-off' || mode==='bernoulli-off-reflection-zero'){
+    pipe.flowContraction=0;
+    if(mode==='bernoulli-off-reflection-zero')offParams.reflection=0;
+  }
+  if(mode==='reed-reset'){
+    pipe.tipDisplacement=0;
+    pipe.tipVelocity=0;
+  }
+
+  const bins=[],all=[];
+  const binSamples=Math.floor(sampleRate*0.01);
+  for(let b=0;b<500;b++){
+    const block=[];
+    for(let i=0;i<binSamples;i++){
+      const y=pipe.renderOne(0,offParams)*0.00062;
+      block.push(y);all.push(y);
+    }
+    bins.push({time_ms:(b+1)*10,rms:rms(block)});
+  }
+  const tail=all.slice(Math.floor(all.length*0.9));
+  return {
+    direction:direction>0?'blow':'draw',excite_pressure_pa:pressure,mode,
+    pump_scale:Number(process.env.PUMP_SCALE||0.4),
+    rms_last_500ms:rms(tail),
+    rms_100ms:bins[9].rms,
+    rms_1000ms:bins[99].rms,
+    rms_5000ms:bins[499].rms
+  };
+}
+const modes=['full','bernoulli-off','reflection-zero','low-q','low-q-reflection-zero','bernoulli-off-reflection-zero','reed-reset'];
+const scenarios=[[1,370],[-1,90],[1,600],[-1,600]];
+const rows=[];
+for(const [direction,pressure] of scenarios)for(const mode of modes)rows.push(runMode({direction,pressure,mode}));
+const result={schema:'sho-ringdown-coupling-diagnostic-v1',pump_scale:Number(process.env.PUMP_SCALE||0.4),rows};
+fs.writeFileSync(path.join(outDir,'result.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify(result,null,2)+'\n');
