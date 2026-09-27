@@ -1,0 +1,11 @@
+{
+  "schema": "tmp-sho-pages-index-v1",
+  "project": "tmp-sho",
+  "canonical_project": "2rwa/audio-synthesis-lab/projects/sho-physical-synth",
+  "base_url": "https://2rwa.github.io/tmp-sho/",
+  "datasets": [],
+  "notes": [
+    "Large intermediates remain in GitHub Actions artifacts.",
+    "Run-ID paths should be treated as immutable provenance URLs."
+  ]
+}

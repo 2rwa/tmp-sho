@@ -71,3 +71,49 @@ After dispatch:
 - inspect initial job state once;
 - if there is no immediate failure, return the conversation;
 - inspect the completed artifact/report at the start of the next turn.
+
+
+## HTTP result channel
+
+GitHub Pages provides a second result channel in addition to git and Actions artifacts.
+
+### Layout
+
+```text
+/
+├── index.html
+└── data/
+    ├── index.json
+    └── <task>/
+        ├── latest.json
+        └── <run-id>/
+            ├── report.json
+            ├── summary.csv
+            └── ...
+```
+
+### Rules
+
+- `data/index.json` is the global machine-readable registry.
+- A run-ID directory is immutable after publication whenever practical.
+- `latest.json` may change and points to the newest accepted run for that task.
+- Prefer run-ID URLs in research notes so old results remain reproducible.
+- Pages is for compact/reusable outputs; Actions artifacts remain the transport for bulky intermediates.
+- Do not publish inputs or derived material that cannot legally be redistributed.
+- Do not publish secrets, private URLs, tokens, or personal data.
+
+### Why both artifact and Pages?
+
+**Artifact**
+- large
+- temporary
+- ideal for raw OCR images, audio files, full sweeps
+
+**Pages**
+- stable HTTPS
+- easy for scripts and later ChatGPT turns to fetch
+- ideal for accepted summaries, plots, small machine-readable datasets and interactive result viewers
+
+### Cache-safe pattern
+
+Because Pages/CDN caches may outlive a commit briefly, prefer immutable URLs containing the Actions run ID. Use `latest.json` only as a convenience pointer.

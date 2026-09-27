@@ -116,3 +116,19 @@ Gitへ戻すものは主に:
 public repository の standard GitHub-hosted runner を主に使う。
 
 長い処理は1 jobあたりの上限内で実行し、必要なら「意味のあるタスク単位」で複数jobへ分割する。
+
+
+## GitHub Pages / HTTPS
+
+Pages endpoint:
+
+`https://2rwa.github.io/tmp-sho/`
+
+Small, reusable outputs are published under stable HTTPS paths so consumers do not need a git checkout.
+
+- registry: `https://2rwa.github.io/tmp-sho/data/index.json`
+- immutable run data: `/data/<task>/<run-id>/...`
+- mutable convenience pointer: `/data/<task>/latest.json`
+
+Use Pages for compact JSON / CSV / TSV / HTML / SVG / PNG summaries.
+Keep large PDFs, page-image sets, WAV/FLAC and bulky sweep output in Actions artifacts unless persistent HTTP access is specifically useful.
