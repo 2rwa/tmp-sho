@@ -1,0 +1,238 @@
+
+const wave4Arg = process.argv.find(x => x.startsWith('--study='));
+const wave4Study = wave4Arg ? wave4Arg.slice('--study='.length) : null;
+const wave4OutArg = process.argv.find(x => x.startsWith('--out='));
+const wave4Out = path.resolve(wave4OutArg ? wave4OutArg.slice(6) : 'results-wave4');
+fs.mkdirSync(wave4Out,{recursive:true});
+
+function wave4Write(study,payload){
+  const obj={
+    schema:'sho-wave4-shared-study-v1',
+    study,
+    source_commit:SOURCE_COMMIT,
+    compute_commit:process.env.GITHUB_SHA||null,
+    run_id:process.env.GITHUB_RUN_ID||null,
+    sample_rate_hz:sampleRate,
+    generated_at:new Date().toISOString(),
+    payload
+  };
+  fs.writeFileSync(path.join(wave4Out,'study.json'),JSON.stringify(obj,null,2)+'\n');
+  process.stdout.write(JSON.stringify({study,summary:Array.isArray(payload)?payload.slice(0,12):payload},null,2)+'\n');
+}
+
+function tailRms(values,fraction=0.1){
+  const start=Math.max(0,Math.floor(values.length*(1-fraction)));
+  return rms(values.slice(start));
+}
+
+function ringdownOne({direction,pressure,resetMode}){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);
+  pipe.gateTarget=1;
+  const excite=Math.floor(sampleRate*2.0);
+  for(let i=0;i<excite;i++) pipe.renderOne(direction*pressure,baseParams);
+
+  if(resetMode==='reed' || resetMode==='all'){
+    pipe.tipDisplacement=0;
+    pipe.tipVelocity=0;
+  }
+  if(resetMode==='delay' || resetMode==='acoustic' || resetMode==='all'){
+    pipe.delayBuffer.fill(0);
+    pipe.writeIndex=0;
+  }
+  if(resetMode==='return' || resetMode==='acoustic' || resetMode==='all') pipe.returnState=0;
+  if(resetMode==='dc' || resetMode==='acoustic' || resetMode==='all'){
+    pipe.previousWave=0;
+    pipe.dcBlockState=0;
+  }
+
+  const binMs=10;
+  const binSamples=Math.max(1,Math.floor(sampleRate*binMs/1000));
+  const bins=[];
+  const all=[];
+  for(let b=0;b<500;b++){
+    const block=[];
+    for(let i=0;i<binSamples;i++){
+      const y=pipe.renderOne(0,baseParams)*0.00062;
+      block.push(y);
+      all.push(y);
+    }
+    bins.push({time_ms:(b+1)*binMs,rms:rms(block)});
+  }
+  function stableBelow(threshold){
+    for(let i=0;i<bins.length;i++){
+      let ok=true;
+      for(let j=i;j<bins.length;j++) if(bins[j].rms>threshold){ok=false;break;}
+      if(ok) return bins[i].time_ms;
+    }
+    return null;
+  }
+  return {
+    direction:direction>0?'blow':'draw',
+    excite_pressure_pa:pressure,
+    reset_mode:resetMode,
+    pumped_flow_scale:Number(process.env.PUMPED_FLOW_SCALE||0.4),
+    rms_last_500ms:tailRms(all,0.1),
+    max_bin_rms:Math.max(...bins.map(x=>x.rms)),
+    stable_below_1e4_ms:stableBelow(1e-4),
+    stable_below_1e5_ms:stableBelow(1e-5),
+    bins
+  };
+}
+
+function runRingdownRootCause(){
+  const scenarios=[
+    {direction:1,pressure:370},
+    {direction:-1,pressure:90},
+    {direction:1,pressure:600},
+    {direction:-1,pressure:600}
+  ];
+  const resets=['none','reed','delay','return','dc','acoustic','all'];
+  const rows=[];
+  for(const s of scenarios){
+    for(const resetMode of resets){
+      process.stderr.write(\`ringdown \${s.direction} \${s.pressure} reset=\${resetMode}\n\`);
+      rows.push(ringdownOne({...s,resetMode}));
+    }
+  }
+  return rows;
+}
+
+function runCaseScheme({names,mouthPressurePa,direction,volumeMl,recoveryMs,duration=2.5,scheme='explicit'}){
+  const activeSet=new Set(names);
+  const pipes=NOTE_DEFS.map(n=>new ShoPipeModel(n));
+  for(const p of pipes) p.gateTarget=activeSet.has(p.note.name)?1:0;
+  const total=Math.floor(sampleRate*duration);
+  const collect=Math.floor(total*0.6);
+  const pressureTau=0.060;
+  const pressureCoeff=1-Math.exp(-dt/pressureTau);
+  const compliance=volumeMl*1e-6/(rho*c*c);
+  const tau=Math.max(0.00025,recoveryMs*0.001);
+  let mouth=0,k=0,finite=true;
+  const ks=[],ms=[],perPipe=new Map(names.map(n=>[n,[]]));
+  for(let i=0;i<total;i++){
+    mouth+=(direction*mouthPressurePa-mouth)*pressureCoeff;
+    let sumFlow=0;
+    for(const pipe of pipes){
+      pipe.renderOne(k,baseParams);
+      sumFlow+=pipe.lastNetInputFlowRaw;
+      if(i>=collect && activeSet.has(pipe.note.name)) perPipe.get(pipe.note.name).push(pipe.lastRadiation*0.00062);
+    }
+    if(scheme==='explicit'){
+      k+=dt*((mouth-k)/tau-sumFlow/compliance);
+    }else if(scheme==='semi-implicit'){
+      k=(k+dt*(mouth/tau-sumFlow/compliance))/(1+dt/tau);
+    }else if(scheme==='exponential'){
+      const steady=mouth-sumFlow*tau/compliance;
+      k=steady+(k-steady)*Math.exp(-dt/tau);
+    }else{
+      throw new Error('unknown scheme '+scheme);
+    }
+    if(!Number.isFinite(k)||Math.abs(k)>5000){finite=false;break;}
+    if(i>=collect){ks.push(k);ms.push(mouth);}
+  }
+  const meanAbs=a=>a.length?a.reduce((s,x)=>s+Math.abs(x),0)/a.length:null;
+  const pipeMetrics={};
+  for(const [name,v] of perPipe) pipeMetrics[name]={rms:rms(v),oscillating:rms(v)>1e-5};
+  return {
+    finite,
+    mean_abs_kashira_pa:meanAbs(ks),
+    mean_abs_mouth_pa:meanAbs(ms),
+    kashira_std_pa:std(ks),
+    pressure_ratio:meanAbs(ks)&&meanAbs(ms)?meanAbs(ks)/meanAbs(ms):null,
+    pipe_metrics:pipeMetrics,
+    all_pipes_oscillating:names.every(n=>pipeMetrics[n]?.oscillating)
+  };
+}
+
+function calibrateScheme(args){
+  let mouth=args.targetKashiraPa;
+  let x=null;
+  for(let i=0;i<7;i++){
+    x=runCaseScheme({...args,mouthPressurePa:mouth});
+    if(!x.finite||!x.mean_abs_kashira_pa) break;
+    const ratio=args.targetKashiraPa/x.mean_abs_kashira_pa;
+    mouth*=ratio;
+    if(Math.abs(1-ratio)<0.0002) break;
+  }
+  x=runCaseScheme({...args,mouthPressurePa:mouth});
+  return {...x,required_mouth_pressure_pa:mouth,target_error_pa:x.mean_abs_kashira_pa===null?null:x.mean_abs_kashira_pa-args.targetKashiraPa};
+}
+
+function runIntegrationSchemes(){
+  const schemes=['explicit','semi-implicit','exponential'];
+  const candidates=[
+    {volumeMl:250,recoveryMs:0.25},
+    {volumeMl:400,recoveryMs:0.5},
+    {volumeMl:600,recoveryMs:1.0}
+  ];
+  const scenarios=[
+    {name:'single_blow_370',names:['一'],targetKashiraPa:370,direction:1},
+    {name:'single_draw_90',names:['一'],targetKashiraPa:90,direction:-1},
+    {name:'chord_blow_600',names:CHORD,targetKashiraPa:600,direction:1},
+    {name:'chord_draw_600',names:CHORD,targetKashiraPa:600,direction:-1}
+  ];
+  const rows=[];
+  for(const scheme of schemes) for(const cnd of candidates) for(const s of scenarios){
+    process.stderr.write(\`integration \${scheme} V=\${cnd.volumeMl} tau=\${cnd.recoveryMs} \${s.name}\n\`);
+    const x=calibrateScheme({...cnd,...s,scheme,duration:2.5});
+    rows.push({
+      scheme,volume_ml:cnd.volumeMl,recovery_ms:cnd.recoveryMs,scenario:s.name,
+      target_kashira_pa:s.targetKashiraPa,...x
+    });
+  }
+  return rows;
+}
+
+function wave4Lcg(seed){
+  let s=seed>>>0;
+  return ()=>{s=(1664525*s+1013904223)>>>0;return s/4294967296;};
+}
+function logUniform(r,min,max){return Math.exp(Math.log(min)+r()*(Math.log(max)-Math.log(min)));}
+
+function runFuzz(){
+  const seedArg=process.argv.find(x=>x.startsWith('--seed='));
+  const countArg=process.argv.find(x=>x.startsWith('--count='));
+  const seed=seedArg?Number(seedArg.slice(7)):271828;
+  const count=countArg?Number(countArg.slice(8)):400;
+  const rand=wave4Lcg(seed);
+  const rows=[];
+  let nonFinite=0;
+  for(let caseId=0;caseId<count;caseId++){
+    const activeCount=1+Math.floor(rand()*15);
+    const pool=[...NOTE_DEFS.map(n=>n.name)];
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const names=pool.slice(0,activeCount);
+    const volumeMl=logUniform(rand,30,1000);
+    const recoveryMs=logUniform(rand,0.25,8);
+    const pressure=20+rand()*1480;
+    const direction=rand()<0.5?1:-1;
+    const inactiveFlowScale=rand()*1.2;
+    const x=runCase({
+      names,pressure,direction,shared:true,volumeMl,recoveryMs,duration:0.5,
+      flowScope:'all_pipes',inactiveFlowScale
+    });
+    if(!x.finite) nonFinite++;
+    rows.push({
+      case_id:caseId,seed,active_count:activeCount,names,
+      direction:direction>0?'blow':'draw',
+      mouth_pressure_pa:pressure,volume_ml:volumeMl,recovery_ms:recoveryMs,
+      inactive_flow_scale:inactiveFlowScale,finite:x.finite,
+      mean_abs_kashira_pa:x.mean_abs_kashira_pa,
+      pressure_ratio:x.pressure_ratio,
+      kashira_pressure_std_pa:x.kashira_pressure_std_pa,
+      total_flow_rms_m3_s:x.total_flow_rms_m3_s,
+      all_active_oscillating:x.all_pipes_oscillating
+    });
+  }
+  const finiteRows=rows.filter(x=>x.finite);
+  const extremes=[...finiteRows].sort((a,b)=>(b.kashira_pressure_std_pa||0)-(a.kashira_pressure_std_pa||0)).slice(0,30);
+  return {seed,count,non_finite:nonFinite,non_finite_fraction:nonFinite/count,extreme_std_cases:extremes,cases:rows};
+}
+
+if(wave4Study){
+  if(wave4Study==='ringdown-root-cause') wave4Write(wave4Study,runRingdownRootCause());
+  else if(wave4Study==='integration-schemes') wave4Write(wave4Study,runIntegrationSchemes());
+  else if(wave4Study==='fuzz-stress') wave4Write(wave4Study,runFuzz());
+  else throw new Error('unknown study '+wave4Study);
+}

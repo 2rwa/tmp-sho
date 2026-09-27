@@ -1,0 +1,50 @@
+name: Shō ringdown root-cause matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/shared-studies.mjs.part"
+      - ".github/workflows/sho-ringdown-root-cause.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src: raise SystemExit('library marker not found')
+          Path('/tmp/lib.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+      - name: Run pumped-flow root-cause matrix
+        run: |
+          set -euo pipefail
+          mkdir -p results-ringdown-root-cause
+          for pump in 0.4 0.0; do
+            sed -e "s/const pumpedFlow = 0.4 \*/const pumpedFlow = ${pump} */" \
+                -e "s/const netInputFlow = flowVelocity + 0.4 \*/const netInputFlow = flowVelocity + ${pump} */" \
+                /tmp/lib.mjs > /tmp/lib-${pump}.mjs
+            cat /tmp/lib-${pump}.mjs scripts/wave4/shared-studies.mjs.part > /tmp/root-${pump}.mjs
+            node --check /tmp/root-${pump}.mjs
+            PUMPED_FLOW_SCALE=${pump} node /tmp/root-${pump}.mjs --study=ringdown-root-cause --out=results-ringdown-root-cause/pump-${pump}
+          done
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-wave4-ringdown-root-cause-${{ github.run_id }}
+          path: results-ringdown-root-cause/
+          retention-days: 14

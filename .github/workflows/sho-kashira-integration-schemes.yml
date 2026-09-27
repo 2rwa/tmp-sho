@@ -1,0 +1,43 @@
+name: Shō kashira integration scheme comparison
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/shared-studies.mjs.part"
+      - ".github/workflows/sho-kashira-integration-schemes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src: raise SystemExit('library marker not found')
+          Path('/tmp/lib.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+      - name: Run integration schemes
+        run: |
+          cat /tmp/lib.mjs scripts/wave4/shared-studies.mjs.part > /tmp/study.mjs
+          node --check /tmp/study.mjs
+          node /tmp/study.mjs --study=integration-schemes --out=results-integration-schemes
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-wave4-integration-schemes-${{ github.run_id }}
+          path: results-integration-schemes/
+          retention-days: 14

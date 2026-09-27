@@ -1,0 +1,38 @@
+name: Shō canonical-method 15-pipe census
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/canonical-engine-study.mjs"
+      - ".github/workflows/sho-canonical-15pipe-census.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+      - name: Fetch canonical audio-synthesis-lab
+        run: |
+          set -euo pipefail
+          git init /tmp/canonical
+          git -C /tmp/canonical remote add origin https://github.com/2rwa/audio-synthesis-lab.git
+          git -C /tmp/canonical fetch --depth=1 origin acf1947c4caf7de724c6ef3452555b109bc1de67
+          git -C /tmp/canonical checkout FETCH_HEAD
+      - name: Syntax check
+        run: node --check scripts/wave4/canonical-engine-study.mjs
+      - name: Run pipe-census
+        env:
+          CANONICAL_COMMIT: acf1947c4caf7de724c6ef3452555b109bc1de67
+        run: node scripts/wave4/canonical-engine-study.mjs --study=pipe-census --engine-html=/tmp/canonical/projects/sho-physical-synth/app/sho_physical_model_v0.html --out=results-pipe-census
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sho-wave4-pipe-census-${{ github.run_id }}
+          path: results-pipe-census/
+          retention-days: 14

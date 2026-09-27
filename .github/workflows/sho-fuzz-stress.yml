@@ -1,0 +1,44 @@
+name: Shō randomized parameter fuzz stress
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/shared-studies.mjs.part"
+      - ".github/workflows/sho-fuzz-stress.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [271828, 314159, 161803, 577215]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble runner
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src: raise SystemExit('library marker not found')
+          Path('/tmp/lib.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+          cat /tmp/lib.mjs scripts/wave4/shared-studies.mjs.part > /tmp/study.mjs
+          node --check /tmp/study.mjs
+      - name: Run 400 randomized cases
+        run: node /tmp/study.mjs --study=fuzz-stress --seed=${{ matrix.seed }} --count=400 --out=results-fuzz-stress
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sho-wave4-fuzz-${{ matrix.seed }}-${{ github.run_id }}
+          path: results-fuzz-stress/
+          retention-days: 14
