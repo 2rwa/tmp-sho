@@ -18,9 +18,9 @@
     },
     {
       "task": "kashira-coupling",
-      "run_id": "36291104080",
-      "source_commit": "f026496c71fb38854f96f4960e7f9a9d60f709a6",
-      "path": "data/kashira-coupling/36291104080/",
+      "run_id": "36294074239",
+      "source_commit": "711358267b36f65ba46c093aa25fad6c07fad093",
+      "path": "data/kashira-coupling/36294074239/",
       "files": [
         "summary.json",
         "summary.csv",
