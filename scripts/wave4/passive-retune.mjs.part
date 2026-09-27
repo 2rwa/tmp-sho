@@ -1,0 +1,125 @@
+
+const outArg=process.argv.find(x=>x.startsWith('--out='));
+const outDir=path.resolve(outArg?outArg.slice(6):'results-passive-retune');
+fs.mkdirSync(outDir,{recursive:true});
+
+function acF0(values){
+  if(values.length<1000)return {hz:null,corr:0};
+  let mean=0;for(const x of values)mean+=x;mean/=values.length;
+  const minLag=Math.floor(sampleRate/560),maxLag=Math.ceil(sampleRate/380);
+  let best=-Infinity,bestLag=0;
+  for(let lag=minLag;lag<=maxLag;lag++){
+    let xy=0,xx=0,yy=0;
+    for(let i=lag;i<values.length;i++){
+      const a=values[i]-mean,b=values[i-lag]-mean;
+      xy+=a*b;xx+=a*a;yy+=b*b;
+    }
+    const corr=xy/Math.sqrt(Math.max(xx*yy,1e-30));
+    if(corr>best){best=corr;bestLag=lag;}
+  }
+  return {hz:bestLag?sampleRate/bestLag:null,corr:Number.isFinite(best)?best:0};
+}
+function render(params,direction,pressure,duration=2){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);pipe.gateTarget=1;
+  const total=Math.floor(sampleRate*duration),start=Math.floor(sampleRate*(duration-0.8));
+  const values=[];let finite=true;
+  for(let i=0;i<total;i++){
+    const y=pipe.renderOne(direction*pressure,params)*0.00062;
+    if(!Number.isFinite(y)){finite=false;break;}
+    if(i>=start)values.push(y);
+  }
+  const rr=rms(values),f=acF0(values);
+  return {finite,rms:rr,f0_hz:f.hz,corr:f.corr,oscillating:finite&&rr>1e-5&&f.hz!==null&&f.corr>0.5};
+}
+function threshold(params,direction){
+  const coarse=direction>0
+    ? Array.from({length:16},(_,i)=>300+i*10)
+    : Array.from({length:13},(_,i)=>60+i*5);
+  let prev=null,first=null;
+  const tested=[];
+  for(const p of coarse){
+    const x=render(params,direction,p);tested.push({p,...x});
+    if(x.oscillating){first=p;break;} prev=p;
+  }
+  if(first===null)return {threshold_pa:null,onset:null};
+  const step=direction>0?2:1;
+  const start=prev===null?Math.max(0,first-(direction>0?10:5)):prev;
+  for(let p=start;p<=first;p+=step){
+    if(tested.some(x=>x.p===p))continue;
+    tested.push({p,...render(params,direction,p)});
+  }
+  tested.sort((a,b)=>a.p-b.p);
+  const hit=tested.find(x=>x.oscillating)||null;
+  return {threshold_pa:hit?.p??null,onset:hit};
+}
+function residual(params,direction,pressure=600){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);pipe.gateTarget=1;
+  for(let i=0;i<sampleRate*2;i++)pipe.renderOne(direction*pressure,params);
+  const tail=[];
+  for(let i=0;i<sampleRate*2;i++){
+    const y=pipe.renderOne(0,params)*0.00062;
+    if(i>=sampleRate*1.5)tail.push(y);
+  }
+  return rms(tail);
+}
+const smoothing=Number(process.env.RETURN_SMOOTHING);
+const reflections=[0.87,0.875,0.88,0.885,0.89];
+const qs=[12,13,14];
+const masses=[0.25,0.30,0.35];
+const escapeScales=[2.10,2.25,2.40,2.55];
+const contractionRatios=[1.40,1.50,1.60,1.70];
+const baseCandidates=[];
+const finals=[];
+
+for(const reflection of reflections)for(const reedQ of qs)for(const massRate of masses){
+  const base={...baseParams,reflection,reedQ,massRate};
+  const rb=residual(base,1,600);
+  const blow=threshold(base,1);
+  const baseRow={
+    return_smoothing:smoothing,reflection,reedQ,massRate,
+    zero_source_blow_rms:rb,
+    blow_threshold_pa:blow.threshold_pa,
+    blow_f0_hz:blow.onset?.f0_hz??null,
+    blow_corr:blow.onset?.corr??null,
+    passive_blow:rb<1e-6
+  };
+  baseCandidates.push(baseRow);
+  if(!baseRow.passive_blow || blow.threshold_pa===null || Math.abs(blow.threshold_pa-370)>16)continue;
+
+  for(const drawEscapeScale of escapeScales)for(const drawContractionRatio of contractionRatios){
+    const p={...base,drawEscapeScale,drawContractionRatio};
+    const draw=threshold(p,-1);
+    if(draw.threshold_pa===null)continue;
+    if(Math.abs(draw.threshold_pa-90)>10)continue;
+    const rd=residual(p,-1,600);
+    const score=
+      Math.abs(blow.threshold_pa-370)+2*Math.abs(draw.threshold_pa-90)+
+      30*Math.abs((blow.onset?.f0_hz??480)-480)/480+
+      30*Math.abs((draw.onset?.f0_hz??480)-480)/480+
+      (rb>=1e-6?1000:0)+(rd>=1e-6?1000:0);
+    finals.push({
+      return_smoothing:smoothing,reflection,reedQ,massRate,drawEscapeScale,drawContractionRatio,
+      blow_threshold_pa:blow.threshold_pa,draw_threshold_pa:draw.threshold_pa,
+      blow_f0_hz:blow.onset?.f0_hz??null,draw_f0_hz:draw.onset?.f0_hz??null,
+      zero_source_blow_rms:rb,zero_source_draw_rms:rd,
+      passive:rb<1e-6&&rd<1e-6,score
+    });
+  }
+}
+finals.sort((a,b)=>a.score-b.score);
+const result={
+  schema:'sho-passive-constant-reflection-retune-v1',
+  sample_rate_hz:sampleRate,
+  return_smoothing:smoothing,
+  base_candidates:baseCandidates,
+  candidates:finals,
+  best:finals.slice(0,20)
+};
+fs.writeFileSync(path.join(outDir,'result.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify({
+  return_smoothing:smoothing,
+  base_passive_near:baseCandidates.filter(x=>x.passive_blow&&x.blow_threshold_pa!==null&&Math.abs(x.blow_threshold_pa-370)<=16),
+  best:finals.slice(0,20)
+},null,2)+'\n');

@@ -1,0 +1,55 @@
+name: Shō passive constant-reflection retune
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/wave4/passive-retune.mjs.part"
+      - ".github/workflows/sho-passive-retune.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retune:
+    strategy:
+      fail-fast: false
+      matrix:
+        smoothing: [0.55, 0.62, 0.70, 0.80]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - name: Assemble passive candidate runner
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src:
+              raise SystemExit('library marker not found')
+          s=src.split(marker,1)[0]+'\n'
+          s=s.replace("const absolutePressure = Math.max(Math.abs(pressureDifference), 1e-5);","const absolutePressure = Math.abs(pressureDifference);")
+          s=s.replace("const pressureSign = pressureDifference >= 0 ? 1 : -1;","const pressureSign = pressureDifference === 0 ? 0 : (pressureDifference > 0 ? 1 : -1);")
+          old="this.returnState += 0.62 * (reflectedTarget - this.returnState);"
+          new="this.returnState += ${{ matrix.smoothing }} * (reflectedTarget - this.returnState);"
+          if old not in s:
+              raise SystemExit('return smoothing anchor not found')
+          s=s.replace(old,new)
+          Path('/tmp/lib.mjs').write_text(s)
+          PY
+          cat /tmp/lib.mjs scripts/wave4/passive-retune.mjs.part > /tmp/test.mjs
+          node --check /tmp/test.mjs
+      - name: Run local retune
+        env:
+          RETURN_SMOOTHING: ${{ matrix.smoothing }}
+        run: node /tmp/test.mjs --out=results-passive-retune
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sho-passive-retune-${{ matrix.smoothing }}-${{ github.run_id }}
+          path: results-passive-retune/
+          retention-days: 14
