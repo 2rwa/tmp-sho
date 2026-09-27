@@ -1,0 +1,337 @@
+{
+  "schema": "tmp-sho-public-chord-census-v1",
+  "run_id": 36294445776,
+  "target_kashira_pa": 600,
+  "summary": {
+    "cases": 22,
+    "stable": 22
+  },
+  "rows": [
+    {
+      "chord": "乞",
+      "direction": "blow",
+      "pipes": [
+        "乞",
+        "乙",
+        "行",
+        "七",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.0911,
+      "kashira_pressure_std_pa": 0.6297,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "乞",
+      "direction": "draw",
+      "pipes": [
+        "乞",
+        "乙",
+        "行",
+        "七",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 674.2691,
+      "kashira_pressure_std_pa": 3.7416,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "一",
+      "direction": "blow",
+      "pipes": [
+        "一",
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.2263,
+      "kashira_pressure_std_pa": 0.6834,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "一",
+      "direction": "draw",
+      "pipes": [
+        "一",
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 675.7577,
+      "kashira_pressure_std_pa": 4.0388,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "工",
+      "direction": "blow",
+      "pipes": [
+        "工",
+        "凢",
+        "乙",
+        "美",
+        "行",
+        "七"
+      ],
+      "required_mouth_pressure_pa": 620.2756,
+      "kashira_pressure_std_pa": 0.6958,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "工",
+      "direction": "draw",
+      "pipes": [
+        "工",
+        "凢",
+        "乙",
+        "美",
+        "行",
+        "七"
+      ],
+      "required_mouth_pressure_pa": 676.2913,
+      "kashira_pressure_std_pa": 4.0446,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "凢",
+      "direction": "blow",
+      "pipes": [
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.0748,
+      "kashira_pressure_std_pa": 0.5902,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "凢",
+      "direction": "draw",
+      "pipes": [
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 673.8852,
+      "kashira_pressure_std_pa": 3.3748,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "乙",
+      "direction": "blow",
+      "pipes": [
+        "乙",
+        "行",
+        "七",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.0103,
+      "kashira_pressure_std_pa": 0.5267,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "乙",
+      "direction": "draw",
+      "pipes": [
+        "乙",
+        "行",
+        "七",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 672.7301,
+      "kashira_pressure_std_pa": 2.8925,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "下",
+      "direction": "blow",
+      "pipes": [
+        "下",
+        "美",
+        "行",
+        "七",
+        "上",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.0619,
+      "kashira_pressure_std_pa": 0.5553,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "下",
+      "direction": "draw",
+      "pipes": [
+        "下",
+        "美",
+        "行",
+        "七",
+        "上",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 673.0471,
+      "kashira_pressure_std_pa": 2.916,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "十",
+      "direction": "blow",
+      "pipes": [
+        "下",
+        "十",
+        "行",
+        "七",
+        "上",
+        "八"
+      ],
+      "required_mouth_pressure_pa": 620.0916,
+      "kashira_pressure_std_pa": 0.5653,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "十",
+      "direction": "draw",
+      "pipes": [
+        "下",
+        "十",
+        "行",
+        "七",
+        "上",
+        "八"
+      ],
+      "required_mouth_pressure_pa": 673.5228,
+      "kashira_pressure_std_pa": 3.0109,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "十(双調)",
+      "direction": "blow",
+      "pipes": [
+        "十",
+        "行",
+        "七",
+        "上",
+        "八"
+      ],
+      "required_mouth_pressure_pa": 619.6323,
+      "kashira_pressure_std_pa": 0.4945,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "十(双調)",
+      "direction": "draw",
+      "pipes": [
+        "十",
+        "行",
+        "七",
+        "上",
+        "八"
+      ],
+      "required_mouth_pressure_pa": 667.3382,
+      "kashira_pressure_std_pa": 2.5777,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "美",
+      "direction": "blow",
+      "pipes": [
+        "美",
+        "行",
+        "七",
+        "比",
+        "上",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 620.0283,
+      "kashira_pressure_std_pa": 0.5255,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "美",
+      "direction": "draw",
+      "pipes": [
+        "美",
+        "行",
+        "七",
+        "比",
+        "上",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 672.4512,
+      "kashira_pressure_std_pa": 2.6852,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "行",
+      "direction": "blow",
+      "pipes": [
+        "行",
+        "七",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 619.5332,
+      "kashira_pressure_std_pa": 0.4463,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "行",
+      "direction": "draw",
+      "pipes": [
+        "行",
+        "七",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 666.197,
+      "kashira_pressure_std_pa": 2.2434,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "比",
+      "direction": "blow",
+      "pipes": [
+        "行",
+        "七",
+        "比",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 619.9589,
+      "kashira_pressure_std_pa": 0.4931,
+      "all_pipes_oscillating": true
+    },
+    {
+      "chord": "比",
+      "direction": "draw",
+      "pipes": [
+        "行",
+        "七",
+        "比",
+        "上",
+        "八",
+        "千"
+      ],
+      "required_mouth_pressure_pa": 671.7921,
+      "kashira_pressure_std_pa": 2.4764,
+      "all_pipes_oscillating": true
+    }
+  ]
+}

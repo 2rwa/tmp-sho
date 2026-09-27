@@ -1,5 +1,5 @@
 {
-  "schema": "tmp-sho-pages-index-v1",
+  "schema": "tmp-sho-pages-index-v2",
   "project": "tmp-sho",
   "canonical_project": "2rwa/audio-synthesis-lab/projects/sho-physical-synth",
   "base_url": "https://2rwa.github.io/tmp-sho/",
@@ -27,10 +27,31 @@
         "index.html"
       ],
       "latest": "data/kashira-coupling/latest.json"
+    },
+    {
+      "task": "public-research-snapshot",
+      "run_id": "20260927",
+      "source_commit": "d1e6f84d8608a43000839ede452898db7a0ef58a",
+      "path": "data/public/",
+      "files": [
+        "manifest.json",
+        "research-snapshot.json",
+        "threshold-census.json",
+        "chord-census.json",
+        "numerical-convergence.json",
+        "diagnostics.json"
+      ]
     }
   ],
   "notes": [
     "Large intermediates remain in GitHub Actions artifacts.",
     "Run-ID paths should be treated as immutable provenance URLs."
-  ]
+  ],
+  "public_pages": {
+    "home": "index.html",
+    "experiments": "experiments.html",
+    "references": "references.html",
+    "manifest": "data/public/manifest.json",
+    "audio_path": "audio/"
+  }
 }

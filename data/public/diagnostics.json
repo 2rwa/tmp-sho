@@ -1,0 +1,71 @@
+{
+  "schema": "tmp-sho-public-diagnostics-v1",
+  "hysteresis": {
+    "run_id": 36294673016,
+    "note": "Short state-carrying ramp; dynamic diagnostic, not a steady-state physical threshold.",
+    "blow_first_on_up_pa": 260,
+    "draw_first_on_up_pa": 70,
+    "blow_last_on_down_pa": 0,
+    "draw_last_on_down_pa": 0
+  },
+  "ringdown": {
+    "run_id": 36294819880,
+    "note": "RMS floor around 1e-4 remains through 5 s after pressure removal; current-model diagnostic/bug, not physical evidence.",
+    "rows": [
+      {
+        "label": "blow_threshold",
+        "stable_below_1e5_ms": null,
+        "rms_at_5s": 0.0001058167
+      },
+      {
+        "label": "blow_high",
+        "stable_below_1e5_ms": null,
+        "rms_at_5s": 0.0001067624
+      },
+      {
+        "label": "draw_threshold",
+        "stable_below_1e5_ms": null,
+        "rms_at_5s": 0.0001027948
+      },
+      {
+        "label": "draw_high",
+        "stable_below_1e5_ms": null,
+        "rms_at_5s": 0.0001041974
+      }
+    ]
+  },
+  "inactive_pipe_load": {
+    "run_id": 36294445824,
+    "note": "Effective inactive-pipe load changes mouth pressure required to hold the same kashira pressure.",
+    "chord_draw_600": [
+      {
+        "inactive_flow_scale": 0,
+        "required_mouth_pressure_pa": 652.333
+      },
+      {
+        "inactive_flow_scale": 0.05,
+        "required_mouth_pressure_pa": 653.5186
+      },
+      {
+        "inactive_flow_scale": 0.1,
+        "required_mouth_pressure_pa": 654.7057
+      },
+      {
+        "inactive_flow_scale": 0.25,
+        "required_mouth_pressure_pa": 658.2037
+      },
+      {
+        "inactive_flow_scale": 0.5,
+        "required_mouth_pressure_pa": 664.0573
+      },
+      {
+        "inactive_flow_scale": 0.75,
+        "required_mouth_pressure_pa": 669.9414
+      },
+      {
+        "inactive_flow_scale": 1,
+        "required_mouth_pressure_pa": 675.7577
+      }
+    ]
+  }
+}

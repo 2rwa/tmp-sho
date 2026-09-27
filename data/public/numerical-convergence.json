@@ -1,0 +1,33 @@
+{
+  "schema": "tmp-sho-public-numerical-convergence-v1",
+  "run_id": 36294673120,
+  "rows": [
+    {
+      "sample_rate_hz": 24000,
+      "fast_direct_threshold_blow_pa": 360,
+      "fast_direct_threshold_draw_pa": 90,
+      "mouth_for_kashira_370_blow_pa": 380.7872158,
+      "mouth_for_kashira_90_draw_pa": 96.0368453,
+      "mouth_for_kashira_600_chord_blow_pa": 619.856859,
+      "mouth_for_kashira_600_chord_draw_pa": 673.0083229
+    },
+    {
+      "sample_rate_hz": 48000,
+      "fast_direct_threshold_blow_pa": 350,
+      "fast_direct_threshold_draw_pa": 85,
+      "mouth_for_kashira_370_blow_pa": 380.7872155,
+      "mouth_for_kashira_90_draw_pa": 96.0369887,
+      "mouth_for_kashira_600_chord_blow_pa": 620.2264065,
+      "mouth_for_kashira_600_chord_draw_pa": 675.7729629
+    },
+    {
+      "sample_rate_hz": 96000,
+      "fast_direct_threshold_blow_pa": 340,
+      "fast_direct_threshold_draw_pa": 85,
+      "mouth_for_kashira_370_blow_pa": 380.7895427,
+      "mouth_for_kashira_90_draw_pa": 96.0446589,
+      "mouth_for_kashira_600_chord_blow_pa": 620.3950994,
+      "mouth_for_kashira_600_chord_draw_pa": 677.5094491
+    }
+  ]
+}

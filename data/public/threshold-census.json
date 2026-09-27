@@ -1,0 +1,97 @@
+{
+  "schema": "tmp-sho-public-threshold-census-v1",
+  "run_id": 36294673096,
+  "detector": "fast 1.6 s RMS detector; not the canonical 2 s autocorrelation regression",
+  "rows": [
+    {
+      "note": "乞",
+      "freq_hz": 430,
+      "blow_threshold_pa": 370,
+      "draw_threshold_pa": 90
+    },
+    {
+      "note": "一",
+      "freq_hz": 483.75,
+      "blow_threshold_pa": 350,
+      "draw_threshold_pa": 85
+    },
+    {
+      "note": "工",
+      "freq_hz": 544.21875,
+      "blow_threshold_pa": 370,
+      "draw_threshold_pa": 90
+    },
+    {
+      "note": "凢",
+      "freq_hz": 573.3333333,
+      "blow_threshold_pa": 380,
+      "draw_threshold_pa": 90
+    },
+    {
+      "note": "乙",
+      "freq_hz": 645,
+      "blow_threshold_pa": 380,
+      "draw_threshold_pa": 90
+    },
+    {
+      "note": "下",
+      "freq_hz": 725.625,
+      "blow_threshold_pa": 390,
+      "draw_threshold_pa": 95
+    },
+    {
+      "note": "十",
+      "freq_hz": 765.3076172,
+      "blow_threshold_pa": 390,
+      "draw_threshold_pa": 95
+    },
+    {
+      "note": "美",
+      "freq_hz": 816.328125,
+      "blow_threshold_pa": 390,
+      "draw_threshold_pa": 95
+    },
+    {
+      "note": "行",
+      "freq_hz": 860,
+      "blow_threshold_pa": 400,
+      "draw_threshold_pa": 95
+    },
+    {
+      "note": "七",
+      "freq_hz": 967.5,
+      "blow_threshold_pa": 410,
+      "draw_threshold_pa": 100
+    },
+    {
+      "note": "比",
+      "freq_hz": 1020.4101563,
+      "blow_threshold_pa": 410,
+      "draw_threshold_pa": 100
+    },
+    {
+      "note": "言",
+      "freq_hz": 1088.4375,
+      "blow_threshold_pa": 420,
+      "draw_threshold_pa": 100
+    },
+    {
+      "note": "上",
+      "freq_hz": 1147.9614258,
+      "blow_threshold_pa": 420,
+      "draw_threshold_pa": 100
+    },
+    {
+      "note": "八",
+      "freq_hz": 1290,
+      "blow_threshold_pa": 430,
+      "draw_threshold_pa": 105
+    },
+    {
+      "note": "千",
+      "freq_hz": 1451.25,
+      "blow_threshold_pa": 450,
+      "draw_threshold_pa": 105
+    }
+  ]
+}

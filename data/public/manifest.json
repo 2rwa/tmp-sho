@@ -1,0 +1,18 @@
+{
+  "schema": "tmp-sho-public-manifest-v1",
+  "published": [
+    "index.html",
+    "references.html",
+    "experiments.html",
+    "data/public/*.json",
+    "audio/*.opus"
+  ],
+  "excluded": [
+    "chat/conversation logs",
+    "internal scratch notes",
+    "personal information",
+    "credentials/secrets",
+    "copyrighted source material without redistribution permission"
+  ],
+  "policy": "Only public research outputs, reproducibility metadata, bibliography, and generated media are published."
+}
