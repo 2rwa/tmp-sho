@@ -1,0 +1,48 @@
+name: Shō random active-set stress
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-studies-wave3/**"
+      - ".github/workflows/kashira-random-chords.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/kashira-full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/kashira-full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src:
+              raise SystemExit('library marker not found')
+          Path('/tmp/kashira-library.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+          cat /tmp/kashira-library.mjs scripts/kashira-studies-wave3/06-wave3.mjs.part > /tmp/kashira-wave3.mjs
+          node --check /tmp/kashira-wave3.mjs
+
+      - name: Run random-chords
+        run: node /tmp/kashira-wave3.mjs --wave3-study=random-chords --out=results-random-chords
+
+      - name: Upload random-chords artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-random-chords-${{ github.run_id }}
+          path: results-random-chords/
+          retention-days: 14

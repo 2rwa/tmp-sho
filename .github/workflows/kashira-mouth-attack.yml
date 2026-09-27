@@ -1,0 +1,55 @@
+name: Shō mouth-pressure attack sensitivity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-studies-wave3/**"
+      - ".github/workflows/kashira-mouth-attack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/kashira-full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/kashira-full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src:
+              raise SystemExit('library marker not found')
+          Path('/tmp/kashira-library.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+          cat /tmp/kashira-library.mjs scripts/kashira-studies-wave3/06-wave3.mjs.part > /tmp/kashira-wave3.mjs
+          node --check /tmp/kashira-wave3.mjs
+
+      - name: Run mouth-attack time constants
+        run: |
+          set -euo pipefail
+          mkdir -p results-mouth-attack
+          for tau in 0.010 0.030 0.060 0.120 0.250; do
+            sed "s/const pressureTau = 0.060;/const pressureTau = ${tau};/" /tmp/kashira-wave3.mjs > /tmp/kashira-mouth-${tau}.mjs
+            node --check /tmp/kashira-mouth-${tau}.mjs
+            SHO_PRESSURE_TAU=${tau} node /tmp/kashira-mouth-${tau}.mjs --wave3-study=mouth-attack --out=results-mouth-attack/${tau}
+          done
+
+      - name: Upload mouth-attack artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-mouth-attack-${{ github.run_id }}
+          path: results-mouth-attack/
+          retention-days: 14
