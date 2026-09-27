@@ -3,7 +3,20 @@
   "project": "tmp-sho",
   "canonical_project": "2rwa/audio-synthesis-lab/projects/sho-physical-synth",
   "base_url": "https://2rwa.github.io/tmp-sho/",
-  "datasets": [],
+  "datasets": [
+    {
+      "task": "blow-draw-asymmetry",
+      "run_id": "36285119924",
+      "source_commit": "fc793ba548a97faaddf0c3e40d4d9e7e0e0c3b77",
+      "path": "data/blow-draw-asymmetry/36285119924/",
+      "files": [
+        "summary.json",
+        "summary.csv",
+        "index.html"
+      ],
+      "latest": "data/blow-draw-asymmetry/latest.json"
+    }
+  ],
   "notes": [
     "Large intermediates remain in GitHub Actions artifacts.",
     "Run-ID paths should be treated as immutable provenance URLs."
