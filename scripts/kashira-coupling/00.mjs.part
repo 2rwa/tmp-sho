@@ -58,10 +58,11 @@ class ShoPipeModel {
     this.previousWave = 0;
     this.dcBlockState = 0;
     this.gate = 0;
-    this.gateTarget = 1;
+    this.gateTarget = 0;
     this.delayBuffer = new Float64Array(512);
     this.writeIndex = 0;
-    this.lastNetInputFlow = 0;
+    this.lastNetInputFlowRaw = 0;
+    this.lastNetInputFlowActive = 0;
     this.lastRadiation = 0;
   }
 

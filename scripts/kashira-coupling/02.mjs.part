@@ -25,43 +25,48 @@ const directReference = {
   chord_draw_600: runCase({names:CHORD,pressure:600,direction:-1,shared:false})
 };
 
-const volumes = [40, 70, 100, 150, 250];
-const recoveries = [1, 2.5, 5, 10, 20];
+const volumes = [40, 70, 100, 150, 250, 400, 600];
+const recoveries = [0.25, 0.5, 1, 2.5, 5];
+const flowScopes = ['active_only', 'all_pipes'];
 const results = [];
 
-for (const volumeMl of volumes) {
-  for (const recoveryMs of recoveries) {
-    process.stderr.write(`kashira V=${volumeMl}mL tau=${recoveryMs}ms\n`);
-    const cases = {
-      single_blow_360: runCase({names:['一'],pressure:360,direction:1,shared:true,volumeMl,recoveryMs}),
-      single_blow_370: runCase({names:['一'],pressure:370,direction:1,shared:true,volumeMl,recoveryMs}),
-      single_draw_80: runCase({names:['一'],pressure:80,direction:-1,shared:true,volumeMl,recoveryMs}),
-      single_draw_90: runCase({names:['一'],pressure:90,direction:-1,shared:true,volumeMl,recoveryMs}),
-      chord_blow_600: runCase({names:CHORD,pressure:600,direction:1,shared:true,volumeMl,recoveryMs}),
-      chord_draw_600: runCase({names:CHORD,pressure:600,direction:-1,shared:true,volumeMl,recoveryMs})
-    };
+for (const flowScope of flowScopes) {
+  for (const volumeMl of volumes) {
+    for (const recoveryMs of recoveries) {
+      process.stderr.write(`kashira scope=${flowScope} V=${volumeMl}mL tau=${recoveryMs}ms\n`);
+      const common = {shared:true,volumeMl,recoveryMs,flowScope};
+      const cases = {
+        single_blow_360: runCase({names:['一'],pressure:360,direction:1,...common}),
+        single_blow_370: runCase({names:['一'],pressure:370,direction:1,...common}),
+        single_draw_80: runCase({names:['一'],pressure:80,direction:-1,...common}),
+        single_draw_90: runCase({names:['一'],pressure:90,direction:-1,...common}),
+        chord_blow_600: runCase({names:CHORD,pressure:600,direction:1,...common}),
+        chord_draw_600: runCase({names:CHORD,pressure:600,direction:-1,...common})
+      };
 
-    const finite = Object.values(cases).every(x => x.finite);
-    const thresholdShape =
-      !cases.single_blow_360.pipe_metrics['一'].oscillating &&
-      cases.single_blow_370.pipe_metrics['一'].oscillating &&
-      !cases.single_draw_80.pipe_metrics['一'].oscillating &&
-      cases.single_draw_90.pipe_metrics['一'].oscillating;
-    const chordStable = cases.chord_blow_600.all_pipes_oscillating && cases.chord_draw_600.all_pipes_oscillating;
-    const blowRatio = cases.chord_blow_600.pressure_ratio ?? 0;
-    const drawRatio = cases.chord_draw_600.pressure_ratio ?? 0;
-    results.push({
-      volume_ml: volumeMl,
-      recovery_ms: recoveryMs,
-      finite,
-      threshold_shape_preserved: thresholdShape,
-      chord_all_oscillating: chordStable,
-      chord_blow_pressure_ratio: blowRatio,
-      chord_draw_pressure_ratio: drawRatio,
-      chord_blow_std_pa: cases.chord_blow_600.kashira_pressure_std_pa,
-      chord_draw_std_pa: cases.chord_draw_600.kashira_pressure_std_pa,
-      cases
-    });
+      const finite = Object.values(cases).every(x => x.finite);
+      const thresholdShape =
+        !cases.single_blow_360.pipe_metrics['一'].oscillating &&
+        cases.single_blow_370.pipe_metrics['一'].oscillating &&
+        !cases.single_draw_80.pipe_metrics['一'].oscillating &&
+        cases.single_draw_90.pipe_metrics['一'].oscillating;
+      const chordStable = cases.chord_blow_600.all_pipes_oscillating && cases.chord_draw_600.all_pipes_oscillating;
+      const blowRatio = cases.chord_blow_600.pressure_ratio ?? 0;
+      const drawRatio = cases.chord_draw_600.pressure_ratio ?? 0;
+      results.push({
+        flow_scope: flowScope,
+        volume_ml: volumeMl,
+        recovery_ms: recoveryMs,
+        finite,
+        threshold_shape_preserved: thresholdShape,
+        chord_all_oscillating: chordStable,
+        chord_blow_pressure_ratio: blowRatio,
+        chord_draw_pressure_ratio: drawRatio,
+        chord_blow_std_pa: cases.chord_blow_600.kashira_pressure_std_pa,
+        chord_draw_std_pa: cases.chord_draw_600.kashira_pressure_std_pa,
+        cases
+      });
+    }
   }
 }
 
@@ -84,6 +89,7 @@ const outDir = path.resolve(outArg ? outArg.slice(6) : 'results-kashira');
 fs.mkdirSync(outDir, {recursive:true});
 
 const compact = ranked.map(r => ({
+  flow_scope:r.flow_scope,
   volume_ml:r.volume_ml,
   recovery_ms:r.recovery_ms,
   finite:r.finite,
@@ -97,7 +103,7 @@ const compact = ranked.map(r => ({
 }));
 
 const summary = {
-  schema:'sho-kashira-coupling-sweep-v1',
+  schema:'sho-kashira-coupling-sweep-v2',
   run_id:process.env.GITHUB_RUN_ID || null,
   compute_repo_commit:process.env.GITHUB_SHA || null,
   source_commit:SOURCE_COMMIT,

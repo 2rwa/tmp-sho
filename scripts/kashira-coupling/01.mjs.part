@@ -28,7 +28,8 @@ ipeEntrancePressure - returnedPressure - this.characteristicImpedance * (flowVel
     const acWave = outgoingWave - this.previousWave + 0.995 * this.dcBlockState;
     this.previousWave = outgoingWave;
     this.dcBlockState = acWave;
-    this.lastNetInputFlow = netInputFlow * this.gate;
+    this.lastNetInputFlowRaw = netInputFlow;
+    this.lastNetInputFlowActive = netInputFlow * this.gate;
     this.lastRadiation = acWave * this.gate;
     return this.lastRadiation;
   }
@@ -48,8 +49,10 @@ function std(values) {
   return Math.sqrt(s / values.length);
 }
 
-function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5, duration=2.5}) {
-  const pipes = NOTE_DEFS.filter(n => names.includes(n.name)).map(n => new ShoPipeModel(n));
+function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5, duration=2.5, flowScope='active_only'}) {
+  const activeSet = new Set(names);
+  const pipes = NOTE_DEFS.map(n => new ShoPipeModel(n));
+  for (const pipe of pipes) pipe.gateTarget = activeSet.has(pipe.note.name) ? 1 : 0;
   const totalSamples = Math.floor(sampleRate * duration);
   const collectStart = Math.floor(totalSamples * 0.6);
   let mouthPressure = 0;
@@ -58,7 +61,7 @@ function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5
   const pressureCoeff = 1 - Math.exp(-dt / pressureTau);
   const compliance = volumeMl * 1e-6 / (rho * c * c);
   const recoveryTau = Math.max(0.00025, recoveryMs * 0.001);
-  const perPipe = new Map(pipes.map(p => [p.note.name, []]));
+  const perPipe = new Map(names.map(name => [name, []]));
   const kSeries = [];
   const mouthSeries = [];
   const flowSeries = [];
@@ -73,8 +76,10 @@ function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5
     let sumFlow = 0;
     for (const pipe of pipes) {
       pipe.renderOne(sourcePressure, baseParams);
-      sumFlow += pipe.lastNetInputFlow;
-      if (i >= collectStart) perPipe.get(pipe.note.name).push(pipe.lastRadiation * 0.00062);
+      sumFlow += flowScope === 'all_pipes' ? pipe.lastNetInputFlowRaw : pipe.lastNetInputFlowActive;
+      if (i >= collectStart && activeSet.has(pipe.note.name)) {
+        perPipe.get(pipe.note.name).push(pipe.lastRadiation * 0.00062);
+      }
     }
 
     if (shared) {
