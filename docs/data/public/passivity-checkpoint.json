@@ -1,0 +1,51 @@
+{
+  "schema": "sho-engine-checkpoint-20260927-v1",
+  "phase": "engineering checkpoint before historical listening prototypes",
+  "canonical_detector": {
+    "sample_rate_hz": 48000,
+    "render_s": 2,
+    "window_s": 0.8,
+    "rms_threshold": 0.00001,
+    "autocorr_threshold": 0.5,
+    "blow_pa": 370,
+    "draw_pa": 90,
+    "f0_hz_approx": 480
+  },
+  "zero_pressure_fix": {
+    "diagnostic_run": 36298352146,
+    "regression_run": 36298430516
+  },
+  "passivity": {
+    "coupling_diagnostic_run": 36298504854,
+    "sample_rate_reflection_map_run": 36298624559,
+    "feasibility_run": 36298800629,
+    "passive_retune_run": 36298908053
+  },
+  "leading_provisional_candidate": {
+    "return_smoothing": 0.62,
+    "reflection": 0.875,
+    "reedQ": 13,
+    "massRate": 0.35,
+    "drawEscapeScale": 2.4,
+    "drawContractionRatio": 1.4,
+    "blow_threshold_pa": 370,
+    "draw_threshold_pa": 89,
+    "blow_f0_hz": 480,
+    "draw_f0_hz": 480,
+    "zero_source_blow_rms": 1.1764921127670396e-18,
+    "zero_source_draw_rms": 1.4413563291957603e-18,
+    "status": "provisional_not_canonical"
+  },
+  "next_profiles": [
+    "MODERN_REFERENCE",
+    "GAKKAROKU_1690_CONSTRAINED",
+    "SHOSOIN_GEOMETRY_CONSTRAINED"
+  ],
+  "evidence_classes": [
+    "DIRECT",
+    "DERIVED",
+    "CONTROLLED",
+    "HYPOTHESIS",
+    "UNKNOWN"
+  ]
+}

@@ -9,7 +9,7 @@ audio{width:100%;margin-top:8px}.small{font-size:13px}code{background:var(--soft
 @media(prefers-color-scheme:light){:root{--bg:#f7f8fa;--panel:#fff;--soft:#f1f4f6;--text:#16202a;--muted:#66717b;--line:#dce2e7;--accent:#0d7f70;--warn:#9a6512;--bad:#a83f3f}.lead{color:#3e4a55}}
 </style></head><body><main>
 <div class="eyebrow">tmp-sho / public research notes</div><h1>笙の物理音源モデル<br>公開検証ノート</h1>
-<p class="lead">日本の笙（shō）の自由簧・管共鳴・吹奏/吸奏非対称・匏（かしら）の共通圧力結合を、再現可能な数値実験として検証しています。公開対象は生成した実験データ、再現条件、文献情報、生成音です。会話ログ、内部メモ、個人情報は掲載しません。</p><nav><a href="./">概要</a><a href="experiments.html">実験一覧</a><a href="references.html">文献</a><a href="data/index.json">machine-readable data</a></nav>
+<p class="lead">日本の笙（shō）の自由簧・管共鳴・吹奏/吸奏非対称・匏（かしら）の共通圧力結合を、再現可能な数値実験として検証しています。公開対象は生成した実験データ、再現条件、文献情報、生成音です。会話ログ、内部メモ、個人情報は掲載しません。</p><nav><a href="./">概要</a><a href="checkpoint-20260927.html">最新checkpoint</a><a href="experiments.html">実験一覧</a><a href="references.html">文献</a><a href="data/index.json">machine-readable data</a></nav>
 <h2>現在地</h2><div class="grid">
 <div class="card"><h3>一管 canonical 閾値</h3><div class="metric">370 / 90 Pa</div><div class="muted">吹奏 / 吸奏。canonical detector で校正。</div></div>
 <div class="card"><h3>共有匏の探索候補</h3><div class="metric">400 mL / 0.5 ms</div><div class="muted">lumped compliance の有効候補。実測寸法ではありません。</div></div>
@@ -41,7 +41,7 @@ audio{width:100%;margin-top:8px}.small{font-size:13px}code{background:var(--soft
 <div class="card"><h3>11合竹 × 吹/吸</h3><div class="metric good">22 / 22</div></div>
 <div class="card"><h3>random active set</h3><div class="metric good">48 / 48</div></div></div>
 <div class="note"><b>sample-rate sensitivity:</b> fast detector の吹奏閾値は 24/48/96 kHz で 360/350/340 Pa と動きます。一方、匏370 Paを維持する mouth pressure は約 380.787/380.787/380.790 Pa とほぼ不変です。</div>
-<div class="note"><b>未解決:</b> pressure を0へ戻した ringdown で RMS ≈ 1×10⁻⁴ の残留床が5秒後も消えません。hysteresis の短い ramp に出る 260/70 Pa や 0 Paまでの残留発振は、現時点では物理現象ではなく診断値として扱います。<a href="data/public/diagnostics.json"> diagnostics.json</a></div>
+<div class="note oknote"><b>更新:</b> 旧高反射モデルのzero-source limit cycleは、reflectionとBernoulli couplingの組合せに由来することを切り分けました。passiveな定数reflection領域が見つかり、run <code>36298908053</code> では 370/89 Pa・約480 Hz・zero-source residual ≈ numerical zero の候補を得ています。詳細は <a href="checkpoint-20260927.html">最新checkpoint</a>。</div>
 
 <h2>合成音サンプル</h2><p>run 36294819923 の6秒レンダリングを公開試聴用 Opus に変換します。各ファイルは個別正規化されるため振幅比較には使用できません。</p>
 <div class="grid">
