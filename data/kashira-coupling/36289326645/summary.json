@@ -1,0 +1,491 @@
+{
+  "schema": "sho-kashira-coupling-sweep-v1",
+  "run_id": "36289326645",
+  "compute_repo_commit": "c6a610359f628afdfd017498a26b3c2753c78f63",
+  "source_commit": "6c1fcfcdc2214dfcc98740ce798f7733708ee4bd",
+  "generated_at": "2026-09-27T02:43:24.310Z",
+  "model": {
+    "compliance": "Ca = V / (rho c^2)",
+    "pressure_state": "dp_kashira/dt = (Q_mouth - sum(U_i)) / Ca",
+    "mouth_supply": "Q_mouth = (p_mouth - p_kashira) * Ca / tau_recovery",
+    "note": "This is a lumped shared-pressure model only; it does not claim to reproduce high-frequency cavity modes."
+  },
+  "literature_context": {
+    "measurement_doi": "10.1121/1.4778049",
+    "statement": "Measured kashira pressure contains higher-frequency oscillation than reed motion; cavity shape and volume may significantly affect sound."
+  },
+  "search_grid": {
+    "volume_ml": [
+      40,
+      70,
+      100,
+      150,
+      250
+    ],
+    "recovery_ms": [
+      1,
+      2.5,
+      5,
+      10,
+      20
+    ]
+  },
+  "active_chord": [
+    "一",
+    "凢",
+    "乙",
+    "行",
+    "七",
+    "千"
+  ],
+  "direct_reference": {
+    "single_blow_370": {
+      "names": [
+        "一"
+      ],
+      "pressure_pa": 370,
+      "direction": "blow",
+      "shared": false,
+      "volume_ml": null,
+      "recovery_ms": null,
+      "finite": true,
+      "peak_kashira_pa": 369.99999999991815,
+      "mean_abs_kashira_pa": 369.9999999997023,
+      "mean_abs_mouth_pa": 369.9999999997023,
+      "pressure_ratio": 1,
+      "kashira_pressure_std_pa": 8.174488965206801e-10,
+      "total_flow_rms_m3_s": 0.000004594654572997336,
+      "pipe_metrics": {
+        "一": {
+          "rms": 0.0006757211641714822,
+          "oscillating": true
+        }
+      },
+      "all_pipes_oscillating": true
+    },
+    "single_draw_90": {
+      "names": [
+        "一"
+      ],
+      "pressure_pa": 90,
+      "direction": "draw",
+      "shared": false,
+      "volume_ml": null,
+      "recovery_ms": null,
+      "finite": true,
+      "peak_kashira_pa": 89.99999999997954,
+      "mean_abs_kashira_pa": 89.9999999999276,
+      "mean_abs_mouth_pa": 89.9999999999276,
+      "pressure_ratio": 1,
+      "kashira_pressure_std_pa": 1.9872583741096397e-10,
+      "total_flow_rms_m3_s": 0.0000028237844983621886,
+      "pipe_metrics": {
+        "一": {
+          "rms": 0.002607450855865332,
+          "oscillating": true
+        }
+      },
+      "all_pipes_oscillating": true
+    },
+    "chord_blow_600": {
+      "names": [
+        "一",
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "千"
+      ],
+      "pressure_pa": 600,
+      "direction": "blow",
+      "shared": false,
+      "volume_ml": null,
+      "recovery_ms": null,
+      "finite": true,
+      "peak_kashira_pa": 599.9999999998363,
+      "mean_abs_kashira_pa": 599.9999999995174,
+      "mean_abs_mouth_pa": 599.9999999995174,
+      "pressure_ratio": 1,
+      "kashira_pressure_std_pa": 1.3198127136163314e-9,
+      "total_flow_rms_m3_s": 0.00005699877183072885,
+      "pipe_metrics": {
+        "一": {
+          "rms": 0.05417438918950696,
+          "oscillating": true
+        },
+        "凢": {
+          "rms": 0.05325380608954381,
+          "oscillating": true
+        },
+        "乙": {
+          "rms": 0.053329455043310735,
+          "oscillating": true
+        },
+        "行": {
+          "rms": 0.05306642603428024,
+          "oscillating": true
+        },
+        "七": {
+          "rms": 0.052763909807349275,
+          "oscillating": true
+        },
+        "千": {
+          "rms": 0.05278726076369795,
+          "oscillating": true
+        }
+      },
+      "all_pipes_oscillating": true
+    },
+    "chord_draw_600": {
+      "names": [
+        "一",
+        "凢",
+        "乙",
+        "行",
+        "七",
+        "千"
+      ],
+      "pressure_pa": 600,
+      "direction": "draw",
+      "shared": false,
+      "volume_ml": null,
+      "recovery_ms": null,
+      "finite": true,
+      "peak_kashira_pa": 599.9999999998363,
+      "mean_abs_kashira_pa": 599.9999999995174,
+      "mean_abs_mouth_pa": 599.9999999995174,
+      "pressure_ratio": 1,
+      "kashira_pressure_std_pa": 1.3198127136163314e-9,
+      "total_flow_rms_m3_s": 0.00031061518018575047,
+      "pipe_metrics": {
+        "一": {
+          "rms": 0.3861241989038012,
+          "oscillating": true
+        },
+        "凢": {
+          "rms": 0.366315289813033,
+          "oscillating": true
+        },
+        "乙": {
+          "rms": 0.35819116948244567,
+          "oscillating": true
+        },
+        "行": {
+          "rms": 0.3326807420838333,
+          "oscillating": true
+        },
+        "七": {
+          "rms": 0.32743778997667283,
+          "oscillating": true
+        },
+        "千": {
+          "rms": 0.3138613875529205,
+          "oscillating": true
+        }
+      },
+      "all_pipes_oscillating": true
+    }
+  },
+  "ranked": [
+    {
+      "volume_ml": 250,
+      "recovery_ms": 1,
+      "finite": true,
+      "threshold_shape_preserved": true,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.9518552023494014,
+      "chord_draw_pressure_ratio": 0.7973459569664244,
+      "chord_blow_std_pa": 1.0912985647476472,
+      "chord_draw_std_pa": 4.991489560425869,
+      "score": 15.450924538297695
+    },
+    {
+      "volume_ml": 150,
+      "recovery_ms": 1,
+      "finite": true,
+      "threshold_shape_preserved": true,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.9233127670797572,
+      "chord_draw_pressure_ratio": 0.7096006393898494,
+      "chord_blow_std_pa": 1.7244606794830406,
+      "chord_draw_std_pa": 7.364023372405474,
+      "score": 21.371212768990777
+    },
+    {
+      "volume_ml": 100,
+      "recovery_ms": 1,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.89088533546758,
+      "chord_draw_pressure_ratio": 0.6290876986404692,
+      "chord_blow_std_pa": 2.4281944523247345,
+      "chord_draw_std_pa": 9.525489093355834,
+      "score": 1028.0026965891952
+    },
+    {
+      "volume_ml": 250,
+      "recovery_ms": 2.5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.8911240776233431,
+      "chord_draw_pressure_ratio": 0.6285408537235231,
+      "chord_blow_std_pa": 0.9991705712843484,
+      "chord_draw_std_pa": 3.961895427459253,
+      "score": 1028.0335068653133
+    },
+    {
+      "volume_ml": 70,
+      "recovery_ms": 1,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.8535732146023638,
+      "chord_draw_pressure_ratio": 0.5540885937391568,
+      "chord_blow_std_pa": 3.2069281379650443,
+      "chord_draw_std_pa": 11.548493040930994,
+      "score": 1039.233819165848
+    },
+    {
+      "volume_ml": 150,
+      "recovery_ms": 2.5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.83518402508575,
+      "chord_draw_pressure_ratio": 0.5204709025504988,
+      "chord_blow_std_pa": 1.481058291376376,
+      "chord_draw_std_pa": 5.215000685679873,
+      "score": 1044.434507236375
+    },
+    {
+      "volume_ml": 250,
+      "recovery_ms": 5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.8110531259339746,
+      "chord_draw_pressure_ratio": 0.4820539703227472,
+      "chord_blow_std_pa": 0.8404540150033541,
+      "chord_draw_std_pa": 2.8623563694037215,
+      "score": 1050.6892903743278
+    },
+    {
+      "volume_ml": 40,
+      "recovery_ms": 1,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.7764907401437282,
+      "chord_draw_pressure_ratio": 0.43800405990864066,
+      "chord_blow_std_pa": 4.654274789086197,
+      "chord_draw_std_pa": 14.691846635818722,
+      "score": 1058.5505199947631
+    },
+    {
+      "volume_ml": 100,
+      "recovery_ms": 2.5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.7774829888157526,
+      "chord_draw_pressure_ratio": 0.4365848617315367,
+      "chord_blow_std_pa": 1.9213865430705932,
+      "chord_draw_std_pa": 6.237950216784596,
+      "score": 1058.593214945271
+    },
+    {
+      "volume_ml": 150,
+      "recovery_ms": 5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.7304710199697204,
+      "chord_draw_pressure_ratio": 0.3812667297643436,
+      "chord_blow_std_pa": 1.0907288669801676,
+      "chord_draw_std_pa": 3.4881530327014327,
+      "score": 1068.8262250265936
+    },
+    {
+      "volume_ml": 70,
+      "recovery_ms": 2.5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.7174786349712089,
+      "chord_draw_pressure_ratio": 0.3688124420209484,
+      "chord_blow_std_pa": 2.2289440621634324,
+      "chord_draw_std_pa": 7.037350372851452,
+      "score": 1071.3708923007844
+    },
+    {
+      "volume_ml": 250,
+      "recovery_ms": 10,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.6986761384042476,
+      "chord_draw_pressure_ratio": 0.34903660794000646,
+      "chord_blow_std_pa": 0.7132813233550493,
+      "chord_draw_std_pa": 1.845492766123707,
+      "score": 1075.2287253655745
+    },
+    {
+      "volume_ml": 100,
+      "recovery_ms": 5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.6566453005961215,
+      "chord_draw_pressure_ratio": 0.3124369590518042,
+      "chord_blow_std_pa": 0.780129613200391,
+      "chord_draw_std_pa": 3.879668932803662,
+      "score": 1083.0917740352074
+    },
+    {
+      "volume_ml": 40,
+      "recovery_ms": 2.5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": true,
+      "chord_blow_pressure_ratio": 0.6060617696814247,
+      "chord_draw_pressure_ratio": 0.279406942718467,
+      "chord_blow_std_pa": 1.2718746306522177,
+      "chord_draw_std_pa": 7.899154297109675,
+      "score": 1091.4531287600107
+    },
+    {
+      "volume_ml": 150,
+      "recovery_ms": 10,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.5915885694957546,
+      "chord_draw_pressure_ratio": 0.2712780190690777,
+      "chord_blow_std_pa": 7.718913361102792e-7,
+      "chord_draw_std_pa": 2.0306086821393037,
+      "score": 1593.7133411435168
+    },
+    {
+      "volume_ml": 70,
+      "recovery_ms": 5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.5743385517858746,
+      "chord_draw_pressure_ratio": 0.2617802337406918,
+      "chord_blow_std_pa": 1.2161582281469192e-7,
+      "chord_draw_std_pa": 4.070722387222932,
+      "score": 1596.3881214473433
+    },
+    {
+      "volume_ml": 250,
+      "recovery_ms": 20,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.5453288738870905,
+      "chord_draw_pressure_ratio": 0.24860827136594554,
+      "chord_blow_std_pa": 9.797785200156252e-10,
+      "chord_draw_std_pa": 1.0234108014966432,
+      "score": 1600.6062854746965
+    },
+    {
+      "volume_ml": 100,
+      "recovery_ms": 10,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.4861266824106424,
+      "chord_draw_pressure_ratio": 0.22316850956759834,
+      "chord_blow_std_pa": 7.639673215118466e-10,
+      "chord_draw_std_pa": 2.003413141071164,
+      "score": 1609.0704808021758
+    },
+    {
+      "volume_ml": 40,
+      "recovery_ms": 5,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.4249517419714199,
+      "chord_draw_pressure_ratio": 0.20011513269495101,
+      "chord_blow_std_pa": 7.062638179074661e-10,
+      "chord_draw_std_pa": 3.716572158489444,
+      "score": 1617.493312533363
+    },
+    {
+      "volume_ml": 150,
+      "recovery_ms": 20,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.4070463030072937,
+      "chord_draw_pressure_ratio": 0.19602527302272665,
+      "chord_blow_std_pa": 7.640712347656804e-10,
+      "chord_draw_std_pa": 0.8914379875805659,
+      "score": 1619.692842396998
+    },
+    {
+      "volume_ml": 70,
+      "recovery_ms": 10,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.3878616476781804,
+      "chord_draw_pressure_ratio": 0.18914692020954116,
+      "chord_blow_std_pa": 6.556410399741482e-10,
+      "chord_draw_std_pa": 1.7003624868307898,
+      "score": 1622.2991432112278
+    },
+    {
+      "volume_ml": 100,
+      "recovery_ms": 20,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.2950967749672584,
+      "chord_draw_pressure_ratio": 0.1597472284347268,
+      "chord_blow_std_pa": 5.813088106710089e-10,
+      "chord_draw_std_pa": 0.4386846740304735,
+      "score": 1634.5155996598016
+    },
+    {
+      "volume_ml": 40,
+      "recovery_ms": 10,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.23640297628358634,
+      "chord_draw_pressure_ratio": 0.1290813091893527,
+      "chord_blow_std_pa": 4.945049508958013e-10,
+      "chord_draw_std_pa": 2.460216595575435e-10,
+      "score": 1643.451571452706
+    },
+    {
+      "volume_ml": 70,
+      "recovery_ms": 20,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.20338699601789215,
+      "chord_draw_pressure_ratio": 0.10882544177947913,
+      "chord_blow_std_pa": 4.458918552593007e-10,
+      "chord_draw_std_pa": 2.264380949386628e-10,
+      "score": 1648.778756220263
+    },
+    {
+      "volume_ml": 40,
+      "recovery_ms": 20,
+      "finite": true,
+      "threshold_shape_preserved": false,
+      "chord_all_oscillating": false,
+      "chord_blow_pressure_ratio": 0.09305233372757421,
+      "chord_draw_pressure_ratio": 0.04567724746571826,
+      "chord_blow_std_pa": 2.2854139182565687e-10,
+      "chord_draw_std_pa": 1.1237422046626769e-10,
+      "score": 1666.1270418806707
+    }
+  ]
+}
