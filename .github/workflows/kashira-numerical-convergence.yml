@@ -1,0 +1,55 @@
+name: Shō numerical convergence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-studies-extra/**"
+      - ".github/workflows/kashira-numerical-convergence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/kashira-full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/kashira-full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src:
+              raise SystemExit('library marker not found')
+          Path('/tmp/kashira-library.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+          cat /tmp/kashira-library.mjs scripts/kashira-studies-extra/05-extra-studies.mjs.part > /tmp/kashira-extra.mjs
+          node --check /tmp/kashira-extra.mjs
+
+      - name: Run numerical convergence at 24/48/96 kHz
+        run: |
+          set -euo pipefail
+          mkdir -p results-numerical
+          for sr in 24000 48000 96000; do
+            sed "s/const sampleRate = 48000;/const sampleRate = ${sr};/" /tmp/kashira-extra.mjs > /tmp/kashira-extra-${sr}.mjs
+            node --check /tmp/kashira-extra-${sr}.mjs
+            node /tmp/kashira-extra-${sr}.mjs --extra-study=numerical-convergence --out=results-numerical/${sr}
+          done
+
+      - name: Upload numerical-convergence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-numerical-convergence-${{ github.run_id }}
+          path: results-numerical/
+          retention-days: 14

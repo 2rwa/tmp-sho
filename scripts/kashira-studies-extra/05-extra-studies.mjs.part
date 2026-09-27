@@ -1,0 +1,227 @@
+
+// Extra independent studies. The workflow prepends the physical-model library
+// (everything before "const directReference = {" from the canonical tmp runner).
+
+const extraStudyArg = process.argv.find(x => x.startsWith('--extra-study='));
+const extraStudy = extraStudyArg ? extraStudyArg.slice('--extra-study='.length) : null;
+const extraOutArg = process.argv.find(x => x.startsWith('--out='));
+const extraOutDir = path.resolve(extraOutArg ? extraOutArg.slice(6) : 'results-extra');
+fs.mkdirSync(extraOutDir,{recursive:true});
+
+function extraWrite(name,payload){
+  const obj={
+    schema:'sho-kashira-extra-study-v1',
+    study:name,
+    source_commit:SOURCE_COMMIT,
+    compute_repo_commit:process.env.GITHUB_SHA || null,
+    run_id:process.env.GITHUB_RUN_ID || null,
+    sample_rate_hz:sampleRate,
+    generated_at:new Date().toISOString(),
+    payload
+  };
+  fs.writeFileSync(path.join(extraOutDir,'study.json'),JSON.stringify(obj,null,2)+'\n');
+  process.stdout.write(JSON.stringify({
+    study:name,sample_rate_hz:sampleRate,
+    summary:Array.isArray(payload)?payload.slice(0,12):payload
+  },null,2)+'\n');
+}
+
+function singlePipeDirect(note,pressure,direction,params=baseParams,duration=1.6){
+  const pipe=new ShoPipeModel(note);
+  pipe.gateTarget=1;
+  const total=Math.floor(sampleRate*duration);
+  const collect=Math.floor(total*0.6);
+  let sumSq=0,n=0,finite=true,peak=0;
+  for(let i=0;i<total;i++){
+    const y=pipe.renderOne(direction*pressure,params)*0.00062;
+    if(!Number.isFinite(y)){ finite=false; break; }
+    peak=Math.max(peak,Math.abs(y));
+    if(i>=collect){ sumSq+=y*y; n++; }
+  }
+  const valueRms=Math.sqrt(sumSq/Math.max(1,n));
+  return {pressure_pa:pressure,direction:direction>0?'blow':'draw',finite,rms:valueRms,peak,oscillating:valueRms>1e-5};
+}
+
+function findDirectThreshold(note,direction,params=baseParams){
+  const start=direction>0?40:20;
+  const stop=direction>0?800:400;
+  const step=direction>0?10:5;
+  let first=null,previous=null;
+  for(let p=start;p<=stop;p+=step){
+    const x=singlePipeDirect(note,p,direction,params);
+    if(!x.finite) return {threshold_pa:null,finite:false,last:x};
+    if(x.oscillating){ first=x; break; }
+    previous=x;
+  }
+  return {
+    threshold_pa:first?first.pressure_pa:null,
+    finite:true,
+    previous_pressure_pa:previous?previous.pressure_pa:null,
+    onset:first
+  };
+}
+
+function runPipeThresholdCensus(){
+  const rows=[];
+  for(const note of NOTE_DEFS){
+    process.stderr.write('pipe threshold '+note.name+'\n');
+    rows.push({
+      note:note.name,freq_hz:note.freq,reed_ratio:note.reedRatio,
+      blow:findDirectThreshold(note,1),
+      draw:findDirectThreshold(note,-1)
+    });
+  }
+  return rows;
+}
+
+function hysteresisDirection(direction){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);
+  pipe.gateTarget=1;
+  const maxP=direction>0?520:220;
+  const step=direction>0?10:5;
+  const holdS=0.14;
+  const sequence=[];
+  for(let p=0;p<=maxP;p+=step) sequence.push({phase:'up',p});
+  for(let p=maxP-step;p>=0;p-=step) sequence.push({phase:'down',p});
+  const rows=[];
+  for(const s of sequence){
+    const total=Math.floor(sampleRate*holdS);
+    const collect=Math.floor(total*0.55);
+    let sumSq=0,n=0,finite=true;
+    for(let i=0;i<total;i++){
+      const y=pipe.renderOne(direction*s.p,baseParams)*0.00062;
+      if(!Number.isFinite(y)){finite=false;break;}
+      if(i>=collect){sumSq+=y*y;n++;}
+    }
+    const valueRms=Math.sqrt(sumSq/Math.max(1,n));
+    rows.push({phase:s.phase,pressure_pa:s.p,rms:valueRms,oscillating:valueRms>1e-5,finite});
+    if(!finite) break;
+  }
+  const up=rows.filter(x=>x.phase==='up'&&x.oscillating)[0]||null;
+  const down=[...rows].reverse().find(x=>x.phase==='down'&&x.oscillating)||null;
+  return {direction:direction>0?'blow':'draw',first_on_up:up,last_on_down:down,curve:rows};
+}
+
+function runHysteresisStudy(){
+  return {blow:hysteresisDirection(1),draw:hysteresisDirection(-1)};
+}
+
+function spreadNames(count){
+  if(count>=NOTE_DEFS.length) return NOTE_DEFS.map(n=>n.name);
+  const out=[];
+  for(let i=0;i<count;i++){
+    const idx=Math.round(i*(NOTE_DEFS.length-1)/Math.max(1,count-1));
+    const name=NOTE_DEFS[idx].name;
+    if(!out.includes(name)) out.push(name);
+  }
+  for(const n of NOTE_DEFS){ if(out.length>=count) break; if(!out.includes(n.name)) out.push(n.name); }
+  return out.slice(0,count);
+}
+
+function runActiveCountStudy(){
+  const counts=[1,2,3,4,6,8,11,15];
+  const rows=[];
+  for(const count of counts){
+    const names=spreadNames(count);
+    for(const direction of [1,-1]){
+      const x=runAtKashiraTarget({
+        names,targetKashiraPa:600,direction,
+        volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.5
+      });
+      rows.push({
+        active_count:count,names,direction:direction>0?'blow':'draw',
+        required_mouth_pressure_pa:x.required_mouth_pressure_pa,
+        target_error_pa:x.target_error_pa,
+        pressure_ratio:x.pressure_ratio,
+        kashira_pressure_std_pa:x.kashira_pressure_std_pa,
+        total_flow_rms_m3_s:x.total_flow_rms_m3_s,
+        all_pipes_oscillating:x.all_pipes_oscillating,
+        pipe_metrics:x.pipe_metrics
+      });
+    }
+  }
+  return rows;
+}
+
+function runFineGridStudy(){
+  const volumes=[250,300,350,400,450,500,600];
+  const taus=[0.25,0.35,0.5,0.65,0.8,1.0];
+  const rows=[];
+  for(const volumeMl of volumes){
+    for(const recoveryMs of taus){
+      process.stderr.write(`fine-grid V=${volumeMl} tau=${recoveryMs}\n`);
+      const cases={
+        single_blow:runCase({names:['一'],pressure:381,direction:1,shared:true,volumeMl,recoveryMs,duration:1.8,flowScope:'all_pipes'}),
+        single_draw:runCase({names:['一'],pressure:96,direction:-1,shared:true,volumeMl,recoveryMs,duration:1.8,flowScope:'all_pipes'}),
+        chord_blow:runCase({names:CHORD,pressure:620,direction:1,shared:true,volumeMl,recoveryMs,duration:1.8,flowScope:'all_pipes'}),
+        chord_draw:runCase({names:CHORD,pressure:676,direction:-1,shared:true,volumeMl,recoveryMs,duration:1.8,flowScope:'all_pipes'})
+      };
+      rows.push({
+        volume_ml:volumeMl,recovery_ms:recoveryMs,
+        finite:Object.values(cases).every(x=>x.finite),
+        single_blow_kashira_pa:cases.single_blow.mean_abs_kashira_pa,
+        single_draw_kashira_pa:cases.single_draw.mean_abs_kashira_pa,
+        chord_blow_kashira_pa:cases.chord_blow.mean_abs_kashira_pa,
+        chord_draw_kashira_pa:cases.chord_draw.mean_abs_kashira_pa,
+        chord_blow_std_pa:cases.chord_blow.kashira_pressure_std_pa,
+        chord_draw_std_pa:cases.chord_draw.kashira_pressure_std_pa,
+        chord_all_oscillating:cases.chord_blow.all_pipes_oscillating&&cases.chord_draw.all_pipes_oscillating
+      });
+    }
+  }
+  return rows;
+}
+
+function runSensitivityStudy(){
+  const variants=[];
+  for(const reedQ of [10,11,12,13,14]) variants.push({axis:'reedQ',value:reedQ,params:{...baseParams,reedQ}});
+  for(const massRate of [0.20,0.25,0.30,0.35,0.40]) variants.push({axis:'massRate',value:massRate,params:{...baseParams,massRate}});
+  for(const drawEscapeScale of [1.75,2.0,2.25,2.5,2.75]) variants.push({axis:'drawEscapeScale',value:drawEscapeScale,params:{...baseParams,drawEscapeScale}});
+  for(const drawContractionRatio of [1.25,1.5,1.75]) variants.push({axis:'drawContractionRatio',value:drawContractionRatio,params:{...baseParams,drawContractionRatio}});
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  return variants.map(v=>({
+    axis:v.axis,value:v.value,
+    blow:findDirectThreshold(note,1,v.params),
+    draw:findDirectThreshold(note,-1,v.params)
+  }));
+}
+
+function runNumericalConvergenceStudy(){
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const direct={
+    blow_360:singlePipeDirect(note,360,1),
+    blow_370:singlePipeDirect(note,370,1),
+    draw_80:singlePipeDirect(note,80,-1),
+    draw_90:singlePipeDirect(note,90,-1),
+    blow_threshold:findDirectThreshold(note,1),
+    draw_threshold:findDirectThreshold(note,-1)
+  };
+  const shared={
+    single_blow_370:runAtKashiraTarget({names:['一'],targetKashiraPa:370,direction:1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.0}),
+    single_draw_90:runAtKashiraTarget({names:['一'],targetKashiraPa:90,direction:-1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.0}),
+    chord_blow_600:runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.0}),
+    chord_draw_600:runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:-1,volumeMl:400,recoveryMs:0.5,flowScope:'all_pipes',duration:2.0})
+  };
+  return {
+    direct,
+    shared:Object.fromEntries(Object.entries(shared).map(([k,x])=>[k,{
+      required_mouth_pressure_pa:x.required_mouth_pressure_pa,
+      target_error_pa:x.target_error_pa,
+      pressure_ratio:x.pressure_ratio,
+      kashira_pressure_std_pa:x.kashira_pressure_std_pa,
+      all_pipes_oscillating:x.all_pipes_oscillating,
+      pipe_metrics:x.pipe_metrics
+    }]))
+  };
+}
+
+if(extraStudy){
+  if(extraStudy==='pipe-threshold-census') extraWrite(extraStudy,runPipeThresholdCensus());
+  else if(extraStudy==='hysteresis') extraWrite(extraStudy,runHysteresisStudy());
+  else if(extraStudy==='active-count') extraWrite(extraStudy,runActiveCountStudy());
+  else if(extraStudy==='fine-grid') extraWrite(extraStudy,runFineGridStudy());
+  else if(extraStudy==='sensitivity') extraWrite(extraStudy,runSensitivityStudy());
+  else if(extraStudy==='numerical-convergence') extraWrite(extraStudy,runNumericalConvergenceStudy());
+  else throw new Error('unknown --extra-study='+extraStudy);
+}

@@ -1,0 +1,48 @@
+name: Shō kashira fine-grid study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-studies-extra/**"
+      - ".github/workflows/kashira-fine-grid.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble model library
+        run: |
+          set -euo pipefail
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/kashira-full.mjs
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('/tmp/kashira-full.mjs').read_text()
+          marker='\nconst directReference = {'
+          if marker not in src:
+              raise SystemExit('library marker not found')
+          Path('/tmp/kashira-library.mjs').write_text(src.split(marker,1)[0]+'\n')
+          PY
+          cat /tmp/kashira-library.mjs scripts/kashira-studies-extra/05-extra-studies.mjs.part > /tmp/kashira-extra.mjs
+          node --check /tmp/kashira-extra.mjs
+
+      - name: Run fine-grid
+        run: node /tmp/kashira-extra.mjs --extra-study=fine-grid --out=results-fine-grid
+
+      - name: Upload fine-grid artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-fine-grid-${{ github.run_id }}
+          path: results-fine-grid/
+          retention-days: 14
