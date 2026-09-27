@@ -1,0 +1,144 @@
+
+const outArg = process.argv.find(x => x.startsWith('--out='));
+const outDir = path.resolve(outArg ? outArg.slice(6) : 'results-reflection-feasibility');
+fs.mkdirSync(outDir, {recursive:true});
+
+function acF0(signal) {
+  if (signal.length < 1000) return {hz:null,corr:0};
+  let mean=0;
+  for (const x of signal) mean += x;
+  mean /= signal.length;
+  const minLag=Math.floor(sampleRate/560);
+  const maxLag=Math.ceil(sampleRate/380);
+  let best=-Infinity,bestLag=0;
+  for (let lag=minLag;lag<=maxLag;lag++) {
+    let xy=0,xx=0,yy=0;
+    for (let i=lag;i<signal.length;i++) {
+      const a=signal[i]-mean,b=signal[i-lag]-mean;
+      xy+=a*b; xx+=a*a; yy+=b*b;
+    }
+    const corr=xy/Math.sqrt(Math.max(xx*yy,1e-30));
+    if (corr>best) {best=corr;bestLag=lag;}
+  }
+  return {hz:bestLag?sampleRate/bestLag:null,corr:Number.isFinite(best)?best:0};
+}
+
+function renderDirect(reflection,direction,pressure,duration=2.0) {
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);
+  pipe.gateTarget=1;
+  const params={...baseParams,reflection};
+  const total=Math.floor(sampleRate*duration);
+  const collectStart=Math.floor(sampleRate*(duration-0.8));
+  const values=[];
+  let finite=true;
+  for (let i=0;i<total;i++) {
+    const y=pipe.renderOne(direction*pressure,params)*0.00062;
+    if (!Number.isFinite(y)) {finite=false;break;}
+    if (i>=collectStart) values.push(y);
+  }
+  const rr=rms(values);
+  const f=acF0(values);
+  return {
+    pressure_pa:pressure,
+    finite,
+    rms:rr,
+    f0_hz:f.hz,
+    corr:f.corr,
+    oscillating:finite && rr>1e-5 && f.hz!==null && f.corr>0.5
+  };
+}
+
+function findThreshold(reflection,direction) {
+  const coarse = direction>0
+    ? Array.from({length:21},(_,i)=>200+i*20)
+    : Array.from({length:15},(_,i)=>40+i*10);
+  let first=null,prev=null;
+  const tested=[];
+  for (const p of coarse) {
+    const x=renderDirect(reflection,direction,p);
+    tested.push(x);
+    if (x.oscillating) {first=p;break;}
+    prev=p;
+  }
+  if (first===null) return {threshold_pa:null,onset:null,tested};
+  const fineStep=direction>0?2:1;
+  const start=prev===null?Math.max(0,first-(direction>0?20:10)):prev;
+  for (let p=start;p<=first;p+=fineStep) {
+    if (tested.some(x=>x.pressure_pa===p)) continue;
+    tested.push(renderDirect(reflection,direction,p));
+  }
+  tested.sort((a,b)=>a.pressure_pa-b.pressure_pa);
+  const hit=tested.find(x=>x.oscillating)||null;
+  return {threshold_pa:hit?hit.pressure_pa:null,onset:hit,tested};
+}
+
+function zeroSourceResidual(reflection,direction,excitePressure) {
+  const note=NOTE_DEFS.find(n=>n.name==='一');
+  const pipe=new ShoPipeModel(note);
+  pipe.gateTarget=1;
+  const params={...baseParams,reflection};
+  for (let i=0;i<sampleRate*2;i++) pipe.renderOne(direction*excitePressure,params);
+  const tail=[];
+  for (let i=0;i<sampleRate*2;i++) {
+    const y=pipe.renderOne(0,params)*0.00062;
+    if (i>=sampleRate*1.5) tail.push(y);
+  }
+  const f=acF0(tail);
+  return {rms_last_500ms:rms(tail),f0_hz:f.hz,corr:f.corr};
+}
+
+const smoothing=Number(process.env.RETURN_SMOOTHING);
+const reflections=[0.75,0.8,0.82,0.84,0.86,0.88,0.9,0.92,0.94,0.96,0.985];
+const rows=[];
+for (const reflection of reflections) {
+  process.stderr.write('reflection='+reflection+' smoothing='+smoothing+'\n');
+  const blow=findThreshold(reflection,1);
+  const draw=findThreshold(reflection,-1);
+  const residualBlow=zeroSourceResidual(reflection,1,600);
+  const residualDraw=zeroSourceResidual(reflection,-1,600);
+  rows.push({
+    reflection,
+    return_smoothing:smoothing,
+    blow_threshold_pa:blow.threshold_pa,
+    draw_threshold_pa:draw.threshold_pa,
+    blow_onset_f0_hz:blow.onset?.f0_hz??null,
+    draw_onset_f0_hz:draw.onset?.f0_hz??null,
+    blow_onset_corr:blow.onset?.corr??null,
+    draw_onset_corr:draw.onset?.corr??null,
+    zero_source_blow_rms:residualBlow.rms_last_500ms,
+    zero_source_draw_rms:residualDraw.rms_last_500ms,
+    zero_source_blow_f0_hz:residualBlow.f0_hz,
+    zero_source_draw_f0_hz:residualDraw.f0_hz,
+    passivity_ok:residualBlow.rms_last_500ms<1e-6 && residualDraw.rms_last_500ms<1e-6,
+    calibration_near:
+      blow.threshold_pa!==null && Math.abs(blow.threshold_pa-370)<=10 &&
+      draw.threshold_pa!==null && Math.abs(draw.threshold_pa-90)<=5,
+    f0_near:
+      blow.onset?.f0_hz!==null && Math.abs(blow.onset.f0_hz-480)<=15 &&
+      draw.onset?.f0_hz!==null && Math.abs(draw.onset.f0_hz-480)<=15
+  });
+}
+const feasible=rows.filter(x=>x.passivity_ok&&x.calibration_near&&x.f0_near);
+const result={
+  schema:'sho-constant-reflection-feasibility-v1',
+  sample_rate_hz:sampleRate,
+  detector:{duration_s:2.0,window_s:0.8,rms_threshold:1e-5,autocorr_threshold:0.5},
+  return_smoothing:smoothing,
+  feasible_count:feasible.length,
+  feasible,
+  rows
+};
+fs.writeFileSync(path.join(outDir,'result.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify({return_smoothing:smoothing,feasible_count:feasible.length,feasible,rows:rows.map(x=>({
+  reflection:x.reflection,
+  blow:x.blow_threshold_pa,
+  draw:x.draw_threshold_pa,
+  f0b:x.blow_onset_f0_hz,
+  f0d:x.draw_onset_f0_hz,
+  residual_b:x.zero_source_blow_rms,
+  residual_d:x.zero_source_draw_rms,
+  passivity_ok:x.passivity_ok,
+  calibration_near:x.calibration_near,
+  f0_near:x.f0_near
+}))},null,2)+'\n');
