@@ -7,6 +7,7 @@ const SOURCE_COMMIT = '40b1338e071e1e8bc0c9a03d9af4c0d394e7c06e';
 const SOURCE_HTML_BLOB = 'a978df0b0bb8f4c2a4cf2f93439c826dd6c75800';
 const TARGET = { blow: 370, draw: 90 };
 const quickMode = process.argv.includes('--quick');
+const refineMode = process.argv.includes('--refine');
 
 class ShoPipeModel {
   constructor(sampleRateValue) {
@@ -207,7 +208,8 @@ function renderCase(direction, pressure, asym) {
 }
 
 function estimateThreshold(direction, asym) {
-  const coarseStep = 30;
+  const coarseStep = refineMode ? 20 : 30;
+  const refineStep = refineMode ? 2 : 5;
   const maxPressure = 600;
   let prev = 0;
   let hit = null;
@@ -221,7 +223,7 @@ function estimateThreshold(direction, asym) {
   if (hit === null) return { threshold_pa: null, onset: null, probes };
   let refined = hit;
   let onset = probes[probes.length - 1];
-  for (let p = prev + 5; p < hit; p += 5) {
+  for (let p = prev + refineStep; p < hit; p += refineStep) {
     const r = renderCase(direction, p, asym);
     probes.push(r);
     if (r.oscillating) { refined = p; onset = r; break; }
@@ -247,11 +249,24 @@ function addVariant(reedQ, massRate, drawEscapeScale, drawContractionRatio) {
     drawContractionRatio
   });
 }
+const REFINE_PAIRS = [[12, 0.30], [10, 0.15], [8, 0.00]];
+const REFINE_ESCAPE = [1.0, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0, 3.5, 4.0];
+const REFINE_CONTRACTION = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5];
+
 if (quickMode) {
   addVariant(20, 0.15, 1.0, 1.0);
   for (const e of [1.25, 1.5, 2.0]) addVariant(20, 0.15, e, 1.0);
   for (const c of [1.25, 1.5]) addVariant(20, 0.15, 1.0, c);
   for (const e of [1.5, 2.0]) for (const c of [1.25, 1.5]) addVariant(20, 0.15, e, c);
+} else if (refineMode) {
+  // Keep the canonical v0.1 baseline as a regression control, then focus the
+  // expensive search on symmetric parameter pairs already near the blow target.
+  addVariant(20, 0.15, 1.0, 1.0);
+  for (const [q, m] of REFINE_PAIRS) {
+    for (const e of REFINE_ESCAPE) {
+      for (const c of REFINE_CONTRACTION) addVariant(q, m, e, c);
+    }
+  }
 } else {
   for (const q of [8, 10, 12, 15, 20]) {
     for (const m of [0.0, 0.15, 0.30]) {
@@ -296,10 +311,10 @@ const outDir = path.resolve(outDirArg ? outDirArg.slice(6) : 'results');
 fs.mkdirSync(outDir, { recursive: true });
 
 const summary = {
-  schema: 'sho-blow-draw-asymmetry-sweep-v2',
+  schema: 'sho-blow-draw-asymmetry-sweep-v3',
   run_id: process.env.GITHUB_RUN_ID || null,
   compute_repo_commit: process.env.GITHUB_SHA || null,
-  mode: quickMode ? 'quick' : 'full',
+  mode: quickMode ? 'quick' : (refineMode ? 'refine' : 'full'),
   task: 'blow-draw-asymmetry',
   source_commit: SOURCE_COMMIT,
   source_html_blob: SOURCE_HTML_BLOB,
@@ -315,8 +330,17 @@ const summary = {
     drawEscapeScale: 'Signed-displacement aperture scaling on the negative/displacement side. 1.0 reproduces the even F(x) baseline; >1 makes the reed leave the slot faster on the draw-favoured side without changing rest clearance.',
     drawContractionRatio: 'Multiplier on Bernoulli contraction coefficient C when instantaneous pressure difference is negative, representing upstream/downstream flow-configuration asymmetry.'
   },
-  parameter_grid: quickMode ? 'quick preflight grid' : { reedQ:[8,10,12,15,20], massRate:[0,0.15,0.30], drawEscapeScale:[1,1.25,1.5,2], drawContractionRatio:[1,1.25,1.5] },
-  threshold_search: '30 Pa coarse scan from 30..600 Pa; then 5 Pa refinement within the first oscillating bracket; same oscillation heuristic as canonical regression.',
+  parameter_grid: quickMode
+    ? 'quick preflight grid'
+    : refineMode
+      ? {
+          fixed_symmetric_pairs: REFINE_PAIRS.map(([reedQ, massRate]) => ({ reedQ, massRate })),
+          drawEscapeScale: REFINE_ESCAPE,
+          drawContractionRatio: REFINE_CONTRACTION,
+          note: 'Refinement keeps blow-side calibration fixed and expands geometry-only, flow-only, and combined draw-side asymmetry.'
+        }
+      : { reedQ:[8,10,12,15,20], massRate:[0,0.15,0.30], drawEscapeScale:[1,1.25,1.5,2], drawContractionRatio:[1,1.25,1.5] },
+  threshold_search: refineMode ? '20 Pa coarse scan from 20..600 Pa; then 2 Pa refinement within the first oscillating bracket; same oscillation heuristic as canonical regression.' : '30 Pa coarse scan from 30..600 Pa; then 5 Pa refinement within the first oscillating bracket; same oscillation heuristic as canonical regression.',
   ranked: ranked.map(({probes, ...x}) => x)
 };
 fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
