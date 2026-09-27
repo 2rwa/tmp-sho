@@ -132,3 +132,18 @@ Small, reusable outputs are published under stable HTTPS paths so consumers do n
 
 Use Pages for compact JSON / CSV / TSV / HTML / SVG / PNG summaries.
 Keep large PDFs, page-image sets, WAV/FLAC and bulky sweep output in Actions artifacts unless persistent HTTP access is specifically useful.
+
+
+## Repository rotation
+
+`tmp-sho` is disposable compute storage, not the canonical archive.
+
+When repository size or history becomes inconvenient:
+
+1. stop adding new heavy outputs to the current repository;
+2. keep the old repository and its Pages URLs available as read-only provenance;
+3. create the next repository, e.g. `tmp-sho-2`, `tmp-sho-3`;
+4. copy only the current workflow/scripts/docs needed to continue;
+5. update the active-repository pointer in the canonical project.
+
+Do not spend time rewriting git history merely to reclaim space unless there is a specific reason to preserve the same repository.

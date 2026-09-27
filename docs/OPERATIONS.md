@@ -117,3 +117,39 @@ GitHub Pages provides a second result channel in addition to git and Actions art
 ### Cache-safe pattern
 
 Because Pages/CDN caches may outlive a commit briefly, prefer immutable URLs containing the Actions run ID. Use `latest.json` only as a convenience pointer.
+
+
+## Repository rollover
+
+This repository is expected to accumulate OCR outputs, analysis data, generated media, and workflow history.
+
+When it becomes too large or awkward to maintain, prefer **rollover** over aggressive cleanup.
+
+Recommended naming:
+
+```text
+tmp-sho
+tmp-sho-2
+tmp-sho-3
+...
+```
+
+Rollover procedure:
+
+1. mark the current repository as frozen for new heavy jobs;
+2. leave existing Pages/run-ID URLs intact;
+3. create the next public repository;
+4. bring forward only:
+   - workflows,
+   - analysis scripts,
+   - compact docs,
+   - current manifests/configuration;
+5. do not copy large historical artifacts unless they are still actively needed;
+6. update the canonical `audio-synthesis-lab` checkpoint with:
+   - active tmp repository name,
+   - predecessor repository,
+   - rollover date,
+   - reason;
+7. keep old repositories as provenance rather than deleting them immediately.
+
+The canonical project should never depend on a mutable `latest` pointer from only one scratch repository. Important conclusions must be promoted back to `audio-synthesis-lab`.
