@@ -12,8 +12,8 @@ const outDir=path.resolve(outArg?outArg.slice(6):'results-canonical');
 fs.mkdirSync(outDir,{recursive:true});
 
 const html=fs.readFileSync(htmlPath,'utf8');
-const startToken='const ENGINE_CORE = String.raw\`';
-const endToken='\`;\n\nlet audioContext';
+const startToken='const ENGINE_CORE = String.raw`';
+const endToken='`;\n\nlet audioContext';
 const start=html.indexOf(startToken);
 const end=html.indexOf(endToken,start+startToken.length);
 if(start<0||end<0) throw new Error('ENGINE_CORE block not found');
@@ -98,7 +98,7 @@ function runOnsetDetector(){
   for(const fsHz of sampleRates){
     for(const [dirName,direction] of [['blow',1],['draw',-1]]){
       for(const pressure of pressureSets[dirName]){
-        process.stderr.write(\`render onset fs=\${fsHz} \${dirName} \${pressure}\n\`);
+        process.stderr.write(`render onset fs=${fsHz} ${dirName} ${pressure}\n`);
         const sig=renderSignal({note:'一',direction,pressure,sampleRate:fsHz,totalSeconds:3.0});
         for(const duration of durations)for(const window of windows){
           if(window>duration)continue;
@@ -156,7 +156,7 @@ function findThreshold(note,freq,direction){
 function runPipeCensus(){
   const rows=[];
   for(const [note,freq] of NOTES){
-    process.stderr.write(\`canonical census \${note}\n\`);
+    process.stderr.write(`canonical census ${note}\n`);
     rows.push({note,reference_freq_hz:freq,blow:findThreshold(note,freq,1),draw:findThreshold(note,freq,-1)});
   }
   return rows;

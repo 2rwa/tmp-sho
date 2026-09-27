@@ -91,7 +91,7 @@ function runRingdownRootCause(){
   const rows=[];
   for(const s of scenarios){
     for(const resetMode of resets){
-      process.stderr.write(\`ringdown \${s.direction} \${s.pressure} reset=\${resetMode}\n\`);
+      process.stderr.write(`ringdown ${s.direction} ${s.pressure} reset=${resetMode}\n`);
       rows.push(ringdownOne({...s,resetMode}));
     }
   }
@@ -174,7 +174,7 @@ function runIntegrationSchemes(){
   ];
   const rows=[];
   for(const scheme of schemes) for(const cnd of candidates) for(const s of scenarios){
-    process.stderr.write(\`integration \${scheme} V=\${cnd.volumeMl} tau=\${cnd.recoveryMs} \${s.name}\n\`);
+    process.stderr.write(`integration ${scheme} V=${cnd.volumeMl} tau=${cnd.recoveryMs} ${s.name}\n`);
     const x=calibrateScheme({...cnd,...s,scheme,duration:2.5});
     rows.push({
       scheme,volume_ml:cnd.volumeMl,recovery_ms:cnd.recoveryMs,scenario:s.name,
