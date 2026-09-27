@@ -28,7 +28,7 @@ jobs:
         run: git pull --rebase origin main
 
       - name: Run full asymmetry parameter sweep
-        run: node scripts/sweep-blow-draw-asymmetry.mjs --out=results
+        run: node scripts/sweep-blow-draw-asymmetry.mjs --refine --out=results
 
       - name: Upload full sweep artifact
         if: always()
