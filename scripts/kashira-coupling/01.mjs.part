@@ -35,6 +35,43 @@ ipeEntrancePressure - returnedPressure - this.characteristicImpedance * (flowVel
   }
 }
 
+function runAtKashiraTarget({names, targetKashiraPa, direction, volumeMl, recoveryMs, flowScope='all_pipes', duration=2.5}) {
+  let mouthPressurePa = targetKashiraPa;
+  let result = null;
+  for (let iteration = 0; iteration < 5; iteration++) {
+    result = runCase({
+      names,
+      pressure: mouthPressurePa,
+      direction,
+      shared: true,
+      volumeMl,
+      recoveryMs,
+      duration,
+      flowScope
+    });
+    if (!result.finite || !result.mean_abs_kashira_pa || result.mean_abs_kashira_pa <= 0) break;
+    const ratio = targetKashiraPa / result.mean_abs_kashira_pa;
+    mouthPressurePa *= ratio;
+    if (Math.abs(1 - ratio) < 0.0005) break;
+  }
+  result = runCase({
+    names,
+    pressure: mouthPressurePa,
+    direction,
+    shared: true,
+    volumeMl,
+    recoveryMs,
+    duration,
+    flowScope
+  });
+  return {
+    ...result,
+    target_kashira_pa: targetKashiraPa,
+    required_mouth_pressure_pa: mouthPressurePa,
+    target_error_pa: result.mean_abs_kashira_pa === null ? null : result.mean_abs_kashira_pa - targetKashiraPa
+  };
+}
+
 function rms(values) {
   let s = 0;
   for (const x of values) s += x * x;

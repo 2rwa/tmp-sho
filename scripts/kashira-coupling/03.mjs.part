@@ -2,6 +2,7 @@ measurement_doi:'10.1121/1.4778049',
     statement:'Measured kashira pressure contains higher-frequency oscillation than reed motion; cavity shape and volume may significantly affect sound.'
   },
   search_grid:{flow_scope:flowScopes,volume_ml:volumes,recovery_ms:recoveries},
+  pressure_target_validation:pressureTargetValidation,
   active_chord:CHORD,
   direct_reference:directReference,
   ranked:compact
@@ -24,5 +25,13 @@ process.stdout.write(JSON.stringify({
     chord_blow_all:directReference.chord_blow_600.all_pipes_oscillating,
     chord_draw_all:directReference.chord_draw_600.all_pipes_oscillating
   },
+  pressure_target_validation:pressureTargetValidation.map(x => ({
+    volume_ml:x.volume_ml,
+    recovery_ms:x.recovery_ms,
+    threshold_shape_preserved:x.threshold_shape_preserved,
+    chord_all_oscillating:x.chord_all_oscillating,
+    required_mouth_pressure_pa:x.required_mouth_pressure_pa,
+    target_error_pa:x.target_error_pa
+  })),
   top5:compact.slice(0,5)
 },null,2)+'\n');

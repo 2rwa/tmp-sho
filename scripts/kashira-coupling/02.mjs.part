@@ -83,6 +83,51 @@ function score(x) {
   return s;
 }
 
+const targetValidationCandidates = [
+  {volumeMl:400,recoveryMs:0.5},
+  {volumeMl:250,recoveryMs:0.25},
+  {volumeMl:600,recoveryMs:1.0}
+];
+const pressureTargetValidation = [];
+for (const candidate of targetValidationCandidates) {
+  const common = {...candidate,flowScope:'all_pipes'};
+  process.stderr.write(`pressure-target validation V=${candidate.volumeMl}mL tau=${candidate.recoveryMs}ms\n`);
+  const cases = {
+    blow_360: runAtKashiraTarget({names:['一'],targetKashiraPa:360,direction:1,...common}),
+    blow_370: runAtKashiraTarget({names:['一'],targetKashiraPa:370,direction:1,...common}),
+    draw_80: runAtKashiraTarget({names:['一'],targetKashiraPa:80,direction:-1,...common}),
+    draw_90: runAtKashiraTarget({names:['一'],targetKashiraPa:90,direction:-1,...common}),
+    chord_blow_600: runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:1,...common}),
+    chord_draw_600: runAtKashiraTarget({names:CHORD,targetKashiraPa:600,direction:-1,...common})
+  };
+  pressureTargetValidation.push({
+    volume_ml:candidate.volumeMl,
+    recovery_ms:candidate.recoveryMs,
+    flow_scope:'all_pipes',
+    threshold_shape_preserved:
+      !cases.blow_360.pipe_metrics['一'].oscillating &&
+      cases.blow_370.pipe_metrics['一'].oscillating &&
+      !cases.draw_80.pipe_metrics['一'].oscillating &&
+      cases.draw_90.pipe_metrics['一'].oscillating,
+    chord_all_oscillating:
+      cases.chord_blow_600.all_pipes_oscillating &&
+      cases.chord_draw_600.all_pipes_oscillating,
+    required_mouth_pressure_pa:{
+      blow_370:cases.blow_370.required_mouth_pressure_pa,
+      draw_90:cases.draw_90.required_mouth_pressure_pa,
+      chord_blow_600:cases.chord_blow_600.required_mouth_pressure_pa,
+      chord_draw_600:cases.chord_draw_600.required_mouth_pressure_pa
+    },
+    target_error_pa:{
+      blow_370:cases.blow_370.target_error_pa,
+      draw_90:cases.draw_90.target_error_pa,
+      chord_blow_600:cases.chord_blow_600.target_error_pa,
+      chord_draw_600:cases.chord_draw_600.target_error_pa
+    },
+    cases
+  });
+}
+
 const ranked = [...results].sort((a,b) => score(a) - score(b));
 const outArg = process.argv.find(x => x.startsWith('--out='));
 const outDir = path.resolve(outArg ? outArg.slice(6) : 'results-kashira');
@@ -103,7 +148,7 @@ const compact = ranked.map(r => ({
 }));
 
 const summary = {
-  schema:'sho-kashira-coupling-sweep-v2',
+  schema:'sho-kashira-coupling-sweep-v3',
   run_id:process.env.GITHUB_RUN_ID || null,
   compute_repo_commit:process.env.GITHUB_SHA || null,
   source_commit:SOURCE_COMMIT,
