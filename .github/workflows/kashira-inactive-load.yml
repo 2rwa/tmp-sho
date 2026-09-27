@@ -1,0 +1,39 @@
+name: Shō inactive-pipe load sweep
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-coupling/**"
+      - "scripts/kashira-studies/**"
+      - ".github/workflows/kashira-inactive-load.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble and syntax-check study runner
+        run: |
+          cat scripts/kashira-coupling/*.mjs.part scripts/kashira-studies/04-parallel-studies.mjs.part > /tmp/kashira-study.mjs
+          node --check /tmp/kashira-study.mjs
+
+      - name: Run inactive-load
+        run: node /tmp/kashira-study.mjs --study=inactive-load --out=results-inactive-load
+
+      - name: Upload inactive-load artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-inactive-load-${{ github.run_id }}
+          path: results-inactive-load/
+          retention-days: 14

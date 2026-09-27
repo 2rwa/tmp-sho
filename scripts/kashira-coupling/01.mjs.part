@@ -35,7 +35,7 @@ ipeEntrancePressure - returnedPressure - this.characteristicImpedance * (flowVel
   }
 }
 
-function runAtKashiraTarget({names, targetKashiraPa, direction, volumeMl, recoveryMs, flowScope='all_pipes', duration=2.5}) {
+function runAtKashiraTarget({names, targetKashiraPa, direction, volumeMl, recoveryMs, flowScope='all_pipes', duration=2.5, inactiveFlowScale=1.0}) {
   let mouthPressurePa = targetKashiraPa;
   let result = null;
   for (let iteration = 0; iteration < 5; iteration++) {
@@ -47,7 +47,8 @@ function runAtKashiraTarget({names, targetKashiraPa, direction, volumeMl, recove
       volumeMl,
       recoveryMs,
       duration,
-      flowScope
+      flowScope,
+      inactiveFlowScale
     });
     if (!result.finite || !result.mean_abs_kashira_pa || result.mean_abs_kashira_pa <= 0) break;
     const ratio = targetKashiraPa / result.mean_abs_kashira_pa;
@@ -62,7 +63,8 @@ function runAtKashiraTarget({names, targetKashiraPa, direction, volumeMl, recove
     volumeMl,
     recoveryMs,
     duration,
-    flowScope
+    flowScope,
+    inactiveFlowScale
   });
   return {
     ...result,
@@ -86,7 +88,7 @@ function std(values) {
   return Math.sqrt(s / values.length);
 }
 
-function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5, duration=2.5, flowScope='active_only'}) {
+function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5, duration=2.5, flowScope='active_only', inactiveFlowScale=1.0}) {
   const activeSet = new Set(names);
   const pipes = NOTE_DEFS.map(n => new ShoPipeModel(n));
   for (const pipe of pipes) pipe.gateTarget = activeSet.has(pipe.note.name) ? 1 : 0;
@@ -113,7 +115,13 @@ function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5
     let sumFlow = 0;
     for (const pipe of pipes) {
       pipe.renderOne(sourcePressure, baseParams);
-      sumFlow += flowScope === 'all_pipes' ? pipe.lastNetInputFlowRaw : pipe.lastNetInputFlowActive;
+      if (flowScope === 'all_pipes') {
+        sumFlow += activeSet.has(pipe.note.name)
+          ? pipe.lastNetInputFlowRaw
+          : pipe.lastNetInputFlowRaw * inactiveFlowScale;
+      } else {
+        sumFlow += pipe.lastNetInputFlowActive;
+      }
       if (i >= collectStart && activeSet.has(pipe.note.name)) {
         perPipe.get(pipe.note.name).push(pipe.lastRadiation * 0.00062);
       }

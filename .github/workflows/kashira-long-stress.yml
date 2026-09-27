@@ -1,0 +1,39 @@
+name: Shō kashira long stress
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-coupling/**"
+      - "scripts/kashira-studies/**"
+      - ".github/workflows/kashira-long-stress.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Assemble and syntax-check study runner
+        run: |
+          cat scripts/kashira-coupling/*.mjs.part scripts/kashira-studies/04-parallel-studies.mjs.part > /tmp/kashira-study.mjs
+          node --check /tmp/kashira-study.mjs
+
+      - name: Run long-stress
+        run: node /tmp/kashira-study.mjs --study=long-stress --out=results-long-stress
+
+      - name: Upload long-stress artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-long-stress-${{ github.run_id }}
+          path: results-long-stress/
+          retention-days: 14

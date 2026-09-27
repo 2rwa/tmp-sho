@@ -1,0 +1,174 @@
+
+// ---- Parallel study extensions ------------------------------------------------
+// These run after the baseline sweep above. Each workflow selects one study with
+// --study=<name> and uploads its own artifact without writing back to main.
+
+const studyArg = process.argv.find(x => x.startsWith('--study='));
+const studyName = studyArg ? studyArg.slice('--study='.length) : null;
+
+const studyCandidates = [
+  {volumeMl:250,recoveryMs:0.25,label:'V250-tau0.25'},
+  {volumeMl:400,recoveryMs:0.5,label:'V400-tau0.5'},
+  {volumeMl:600,recoveryMs:1.0,label:'V600-tau1'}
+];
+
+const studyChords = {
+  '乞':['乞','乙','行','七','八','千'],
+  '一':['一','凢','乙','行','七','千'],
+  '工':['工','凢','乙','美','行','七'],
+  '凢':['凢','乙','行','七','八','千'],
+  '乙':['乙','行','七','上','八','千'],
+  '下':['下','美','行','七','上','千'],
+  '十':['下','十','行','七','上','八'],
+  '十(双調)':['十','行','七','上','八'],
+  '美':['美','行','七','比','上','千'],
+  '行':['行','七','上','八','千'],
+  '比':['行','七','比','上','八','千']
+};
+
+function studyCaseDigest(x) {
+  return {
+    finite:x.finite,
+    pressure_pa:x.pressure_pa,
+    mean_abs_kashira_pa:x.mean_abs_kashira_pa,
+    mean_abs_mouth_pa:x.mean_abs_mouth_pa,
+    pressure_ratio:x.pressure_ratio,
+    kashira_pressure_std_pa:x.kashira_pressure_std_pa,
+    total_flow_rms_m3_s:x.total_flow_rms_m3_s,
+    all_pipes_oscillating:x.all_pipes_oscillating,
+    pipe_metrics:x.pipe_metrics
+  };
+}
+
+function writeStudy(name, payload) {
+  const obj = {
+    schema:'sho-kashira-parallel-study-v1',
+    study:name,
+    source_commit:SOURCE_COMMIT,
+    compute_repo_commit:process.env.GITHUB_SHA || null,
+    run_id:process.env.GITHUB_RUN_ID || null,
+    generated_at:new Date().toISOString(),
+    payload
+  };
+  fs.writeFileSync(path.join(outDir,'study.json'),JSON.stringify(obj,null,2)+'\n');
+  process.stdout.write(JSON.stringify({
+    study:name,
+    run_id:obj.run_id,
+    summary:Array.isArray(payload) ? payload.slice(0,8) : payload
+  },null,2)+'\n');
+}
+
+function runTransientStudy() {
+  const durations=[0.25,0.5,1.0,2.5,5.0];
+  const scenarios=[
+    {name:'single_blow_370',names:['一'],target:370,direction:1},
+    {name:'single_draw_90',names:['一'],target:90,direction:-1},
+    {name:'chord_blow_600',names:CHORD,target:600,direction:1},
+    {name:'chord_draw_600',names:CHORD,target:600,direction:-1}
+  ];
+  const rows=[];
+  for(const candidate of studyCandidates){
+    for(const scenario of scenarios){
+      const calibrated=runAtKashiraTarget({
+        names:scenario.names,targetKashiraPa:scenario.target,direction:scenario.direction,
+        volumeMl:candidate.volumeMl,recoveryMs:candidate.recoveryMs,
+        flowScope:'all_pipes',duration:3.0
+      });
+      for(const duration of durations){
+        const x=runCase({
+          names:scenario.names,pressure:calibrated.required_mouth_pressure_pa,
+          direction:scenario.direction,shared:true,volumeMl:candidate.volumeMl,
+          recoveryMs:candidate.recoveryMs,duration,flowScope:'all_pipes'
+        });
+        rows.push({
+          candidate:candidate.label,scenario:scenario.name,duration_s:duration,
+          target_kashira_pa:scenario.target,
+          calibrated_mouth_pa:calibrated.required_mouth_pressure_pa,
+          ...studyCaseDigest(x)
+        });
+      }
+    }
+  }
+  return rows;
+}
+
+function runChordCensusStudy() {
+  const candidate={volumeMl:400,recoveryMs:0.5,label:'V400-tau0.5'};
+  const rows=[];
+  for(const [chord,names] of Object.entries(studyChords)){
+    for(const direction of [1,-1]){
+      const x=runAtKashiraTarget({
+        names,targetKashiraPa:600,direction,
+        volumeMl:candidate.volumeMl,recoveryMs:candidate.recoveryMs,
+        flowScope:'all_pipes',duration:3.0
+      });
+      rows.push({
+        chord,names,direction:direction>0?'blow':'draw',
+        target_kashira_pa:600,required_mouth_pressure_pa:x.required_mouth_pressure_pa,
+        target_error_pa:x.target_error_pa,...studyCaseDigest(x)
+      });
+    }
+  }
+  return rows;
+}
+
+function runInactiveLoadStudy() {
+  const scales=[0,0.05,0.1,0.25,0.5,0.75,1.0];
+  const candidate={volumeMl:400,recoveryMs:0.5,label:'V400-tau0.5'};
+  const scenarios=[
+    {name:'single_blow_370',names:['一'],target:370,direction:1},
+    {name:'single_draw_90',names:['一'],target:90,direction:-1},
+    {name:'chord_blow_600',names:CHORD,target:600,direction:1},
+    {name:'chord_draw_600',names:CHORD,target:600,direction:-1}
+  ];
+  const rows=[];
+  for(const inactiveFlowScale of scales){
+    for(const scenario of scenarios){
+      const x=runAtKashiraTarget({
+        names:scenario.names,targetKashiraPa:scenario.target,direction:scenario.direction,
+        volumeMl:candidate.volumeMl,recoveryMs:candidate.recoveryMs,
+        flowScope:'all_pipes',duration:3.0,inactiveFlowScale
+      });
+      rows.push({
+        inactive_flow_scale:inactiveFlowScale,scenario:scenario.name,
+        target_kashira_pa:scenario.target,
+        required_mouth_pressure_pa:x.required_mouth_pressure_pa,
+        target_error_pa:x.target_error_pa,...studyCaseDigest(x)
+      });
+    }
+  }
+  return rows;
+}
+
+function runLongStressStudy() {
+  const rows=[];
+  for(const candidate of studyCandidates){
+    for(const direction of [1,-1]){
+      const calibrated=runAtKashiraTarget({
+        names:CHORD,targetKashiraPa:600,direction,
+        volumeMl:candidate.volumeMl,recoveryMs:candidate.recoveryMs,
+        flowScope:'all_pipes',duration:3.0
+      });
+      const x=runCase({
+        names:CHORD,pressure:calibrated.required_mouth_pressure_pa,direction,
+        shared:true,volumeMl:candidate.volumeMl,recoveryMs:candidate.recoveryMs,
+        duration:30.0,flowScope:'all_pipes'
+      });
+      rows.push({
+        candidate:candidate.label,direction:direction>0?'blow':'draw',
+        duration_s:30,target_kashira_pa:600,
+        calibrated_mouth_pa:calibrated.required_mouth_pressure_pa,
+        ...studyCaseDigest(x)
+      });
+    }
+  }
+  return rows;
+}
+
+if(studyName){
+  if(studyName==='transient') writeStudy(studyName,runTransientStudy());
+  else if(studyName==='chord-census') writeStudy(studyName,runChordCensusStudy());
+  else if(studyName==='inactive-load') writeStudy(studyName,runInactiveLoadStudy());
+  else if(studyName==='long-stress') writeStudy(studyName,runLongStressStudy());
+  else throw new Error('unknown --study='+studyName);
+}
