@@ -1,0 +1,55 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shō Physical Model Lab — 公開研究ノート</title><style>
+:root{color-scheme:light dark;--bg:#0b0d10;--panel:#13171c;--soft:#1b2128;--text:#e8edf2;--muted:#9ba8b5;--line:#2b333d;--accent:#6fd3c1;--warn:#f0c36a;--bad:#e88b8b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1120px;margin:auto;padding:32px 20px 80px}a{color:var(--accent)}h1{font-size:clamp(30px,5vw,56px);line-height:1.05;margin:.2em 0}h2{margin-top:42px;font-size:24px}h3{font-size:17px;margin:0 0 8px}.lead{font-size:18px;color:#cbd4dc;max-width:880px}.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}.metric{font-size:28px;font-weight:700}.muted{color:var(--muted)}.good{color:var(--accent)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line)}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th:first-child,td:first-child{text-align:left}th{color:#cbd4dc;font-size:12px}.tablewrap{overflow:auto;border-radius:12px}
+.note{border-left:3px solid var(--warn);padding:10px 14px;background:var(--panel);margin:16px 0}.oknote{border-left-color:var(--accent)}nav{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 30px}nav a{text-decoration:none;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+audio{width:100%;margin-top:8px}.small{font-size:13px}code{background:var(--soft);padding:.1em .35em;border-radius:5px}footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted)}
+@media(prefers-color-scheme:light){:root{--bg:#f7f8fa;--panel:#fff;--soft:#f1f4f6;--text:#16202a;--muted:#66717b;--line:#dce2e7;--accent:#0d7f70;--warn:#9a6512;--bad:#a83f3f}.lead{color:#3e4a55}}
+</style></head><body><main>
+<div class="eyebrow">tmp-sho / public research notes</div><h1>笙の物理音源モデル<br>公開検証ノート</h1>
+<p class="lead">日本の笙（shō）の自由簧・管共鳴・吹奏/吸奏非対称・匏（かしら）の共通圧力結合を、再現可能な数値実験として検証しています。公開対象は生成した実験データ、再現条件、文献情報、生成音です。会話ログ、内部メモ、個人情報は掲載しません。</p><nav><a href="./">概要</a><a href="experiments.html">実験一覧</a><a href="references.html">文献</a><a href="data/index.json">machine-readable data</a></nav>
+<h2>現在地</h2><div class="grid">
+<div class="card"><h3>一管 canonical 閾値</h3><div class="metric">370 / 90 Pa</div><div class="muted">吹奏 / 吸奏。canonical detector で校正。</div></div>
+<div class="card"><h3>共有匏の探索候補</h3><div class="metric">400 mL / 0.5 ms</div><div class="muted">lumped compliance の有効候補。実測寸法ではありません。</div></div>
+<div class="card"><h3>11合竹</h3><div class="metric good">22 / 22</div><div class="muted">吹奏/吸奏、匏600 Paで安定。</div></div>
+<div class="card"><h3>ランダム集合</h3><div class="metric good">48 / 48</div><div class="muted">24集合 × 吹/吸が安定。</div></div>
+</div>
+<div class="note oknote"><b>圧力定義:</b> 実験の 370/90 Pa は口元圧ではなく簧上流側の chamber / kashira 圧と比較するのが適切です。共有匏モデルでは mouth pressure と kashira pressure を分離しています。</div>
+
+<h2>吹奏 / 吸奏の非対称</h2>
+<div class="grid"><div class="card"><h3>現在の有効パラメータ</h3><code>Q=12</code><br><code>massRate=0.30</code><br><code>drawEscapeScale=2.25</code><br><code>drawContractionRatio=1.50</code></div>
+<div class="card"><h3>一管 onset</h3><div class="metric">≈ 480 Hz</div><div class="muted">refinement sweep の onset f0。</div></div></div>
+<div class="note"><b>検出法依存:</b> 下表は高速 1.6秒 RMS detector の census です。canonical 2秒 regression と判定器が異なるため、「一」が 350/85 Pa に見えても 370/90 Pa の校正値を置換しません。</div>
+<div class="tablewrap"><table><thead><tr><th>管</th><th>Hz</th><th>吹奏 Pa</th><th>吸奏 Pa</th></tr></thead><tbody><tr><td>乞</td><td>430.00</td><td>370</td><td>90</td></tr><tr><td>一</td><td>483.75</td><td>350</td><td>85</td></tr><tr><td>工</td><td>544.22</td><td>370</td><td>90</td></tr><tr><td>凢</td><td>573.33</td><td>380</td><td>90</td></tr><tr><td>乙</td><td>645.00</td><td>380</td><td>90</td></tr><tr><td>下</td><td>725.63</td><td>390</td><td>95</td></tr><tr><td>十</td><td>765.31</td><td>390</td><td>95</td></tr><tr><td>美</td><td>816.33</td><td>390</td><td>95</td></tr><tr><td>行</td><td>860.00</td><td>400</td><td>95</td></tr><tr><td>七</td><td>967.50</td><td>410</td><td>100</td></tr><tr><td>比</td><td>1020.41</td><td>410</td><td>100</td></tr><tr><td>言</td><td>1088.44</td><td>420</td><td>100</td></tr><tr><td>上</td><td>1147.96</td><td>420</td><td>100</td></tr><tr><td>八</td><td>1290.00</td><td>430</td><td>105</td></tr><tr><td>千</td><td>1451.25</td><td>450</td><td>105</td></tr></tbody></table></div>
+<p class="small"><a href="data/public/threshold-census.json">threshold-census.json</a> / <a href="https://github.com/2rwa/tmp-sho/actions/runs/36294673096">run 36294673096</a></p>
+
+<h2>共有匏モデル</h2>
+<p>現段階では匏を高周波3D共鳴器として解くのではなく、共通圧力状態を持つ lumped compliance として扱います。</p>
+<div class="card"><code>Ca = V / (ρ c²)</code><br><code>dp_kashira/dt = (Q_mouth − ΣUᵢ) / Ca</code><br><code>Q_mouth = (p_mouth − p_kashira) Ca / τ</code></div>
+<div class="grid" style="margin-top:14px">
+<div class="card"><h3>一管・吹奏</h3><div class="metric">380.8 Pa</div><div class="muted">匏 370 Pa を維持する mouth pressure。</div></div>
+<div class="card"><h3>一管・吸奏</h3><div class="metric">96.0 Pa</div><div class="muted">匏 90 Pa を維持。</div></div>
+<div class="card"><h3>6管・吹奏</h3><div class="metric">620.2 Pa</div><div class="muted">匏 600 Pa を維持。</div></div>
+<div class="card"><h3>6管・吸奏</h3><div class="metric">675.8 Pa</div><div class="muted">匏 600 Pa を維持。</div></div></div>
+<h3 style="margin-top:24px">発音管数と必要 mouth pressure（匏 600 Pa）</h3>
+<div class="tablewrap"><table><thead><tr><th>発音管数</th><th>吹奏 Pa</th><th>吸奏 Pa</th></tr></thead><tbody><tr><td>1</td><td>618.0</td><td>646.1</td></tr><tr><td>2</td><td>618.4</td><td>651.2</td></tr><tr><td>3</td><td>618.8</td><td>657.1</td></tr><tr><td>4</td><td>619.2</td><td>662.9</td></tr><tr><td>6</td><td>620.2</td><td>675.3</td></tr><tr><td>8</td><td>621.1</td><td>687.5</td></tr><tr><td>11</td><td>622.4</td><td>705.7</td></tr><tr><td>15</td><td>624.2</td><td>729.8</td></tr></tbody></table></div>
+
+<h2>安定性と数値上の注意</h2>
+<div class="grid"><div class="card"><h3>30秒連続</h3><div class="metric good">6 / 6</div><div class="muted">3候補 × 吹/吸。</div></div>
+<div class="card"><h3>11合竹 × 吹/吸</h3><div class="metric good">22 / 22</div></div>
+<div class="card"><h3>random active set</h3><div class="metric good">48 / 48</div></div></div>
+<div class="note"><b>sample-rate sensitivity:</b> fast detector の吹奏閾値は 24/48/96 kHz で 360/350/340 Pa と動きます。一方、匏370 Paを維持する mouth pressure は約 380.787/380.787/380.790 Pa とほぼ不変です。</div>
+<div class="note"><b>未解決:</b> pressure を0へ戻した ringdown で RMS ≈ 1×10⁻⁴ の残留床が5秒後も消えません。hysteresis の短い ramp に出る 260/70 Pa や 0 Paまでの残留発振は、現時点では物理現象ではなく診断値として扱います。<a href="data/public/diagnostics.json"> diagnostics.json</a></div>
+
+<h2>合成音サンプル</h2><p>run 36294819923 の6秒レンダリングを公開試聴用 Opus に変換します。各ファイルは個別正規化されるため振幅比較には使用できません。</p>
+<div class="grid">
+<div class="card"><h3>一管・吹奏 / 匏370 Pa</h3><audio controls preload="none" src="audio/single-blow-k370.opus"></audio></div>
+<div class="card"><h3>一管・吸奏 / 匏90 Pa</h3><audio controls preload="none" src="audio/single-draw-k90.opus"></audio></div>
+<div class="card"><h3>6管・吹奏 / 匏600 Pa</h3><audio controls preload="none" src="audio/chord-blow-k600.opus"></audio></div>
+<div class="card"><h3>6管・吸奏 / 匏600 Pa</h3><audio controls preload="none" src="audio/chord-draw-k600.opus"></audio></div></div>
+
+<h2>データと再現性</h2><p><a href="experiments.html">公開実験一覧</a>に run ID と compact data を整理しています。既存の詳細 sweep ページもそのまま provenance として保持します。</p>
+<footer>Canonical implementation: <code>2rwa/audio-synthesis-lab/projects/sho-physical-synth/</code> / Public compute & verification: <code>2rwa/tmp-sho</code></footer>
+</main></body></html>

@@ -1,0 +1,162 @@
+{
+  "schema": "tmp-sho-public-research-snapshot-v1",
+  "updated": "2026-09-27",
+  "scope": {
+    "published": [
+      "generated experiment data",
+      "reproducibility conditions",
+      "bibliography",
+      "generated audio"
+    ],
+    "excluded": [
+      "conversation logs",
+      "internal notes",
+      "personal information",
+      "secrets"
+    ]
+  },
+  "canonical_calibration": {
+    "blow_threshold_pa": 370,
+    "draw_threshold_pa": 90,
+    "onset_f0_hz_approx": 480,
+    "reedQ": 12,
+    "massRate": 0.3,
+    "drawEscapeScale": 2.25,
+    "drawContractionRatio": 1.5,
+    "caveat": "Effective fit parameters, not direct physical measurements."
+  },
+  "shared_kashira_candidate": {
+    "volume_ml": 400,
+    "recovery_ms": 0.5,
+    "caveat": "Exploratory lumped-model candidate, not a measured historical kashira volume.",
+    "required_mouth_pressure_pa": {
+      "single_blow_for_kashira_370": 380.7873,
+      "single_draw_for_kashira_90": 96.0433,
+      "chord6_blow_for_kashira_600": 620.2264,
+      "chord6_draw_for_kashira_600": 675.7776
+    }
+  },
+  "stability": {
+    "long_stress_30s": "6/6 finite and oscillating",
+    "aitake_census": "22/22 stable",
+    "random_active_sets": "48/48 stable"
+  },
+  "active_pipe_scaling": [
+    {
+      "active_pipes": 1,
+      "blow_mouth_pa": 617.99,
+      "draw_mouth_pa": 646.11
+    },
+    {
+      "active_pipes": 2,
+      "blow_mouth_pa": 618.36,
+      "draw_mouth_pa": 651.17
+    },
+    {
+      "active_pipes": 3,
+      "blow_mouth_pa": 618.81,
+      "draw_mouth_pa": 657.09
+    },
+    {
+      "active_pipes": 4,
+      "blow_mouth_pa": 619.24,
+      "draw_mouth_pa": 662.92
+    },
+    {
+      "active_pipes": 6,
+      "blow_mouth_pa": 620.16,
+      "draw_mouth_pa": 675.25
+    },
+    {
+      "active_pipes": 8,
+      "blow_mouth_pa": 621.08,
+      "draw_mouth_pa": 687.53
+    },
+    {
+      "active_pipes": 11,
+      "blow_mouth_pa": 622.44,
+      "draw_mouth_pa": 705.72
+    },
+    {
+      "active_pipes": 15,
+      "blow_mouth_pa": 624.24,
+      "draw_mouth_pa": 729.81
+    }
+  ],
+  "limitations": [
+    "fast threshold detector remains sample-rate sensitive",
+    "ringdown retains ~1e-4 RMS floor at 5 s",
+    "kashira model is lumped and does not reproduce high-frequency cavity modes",
+    "effective asymmetry parameters are not measured geometry"
+  ],
+  "runs": [
+    {
+      "name": "吹奏/吸奏 非対称 refinement",
+      "run_id": 36286542589
+    },
+    {
+      "name": "匏内圧基準 validation",
+      "run_id": 36294074239
+    },
+    {
+      "name": "非発音管 load sweep",
+      "run_id": 36294445824
+    },
+    {
+      "name": "transient",
+      "run_id": 36294445819
+    },
+    {
+      "name": "11合竹 census",
+      "run_id": 36294445776
+    },
+    {
+      "name": "30秒 stress",
+      "run_id": 36294445764
+    },
+    {
+      "name": "全15管 fast threshold census",
+      "run_id": 36294673096
+    },
+    {
+      "name": "24/48/96 kHz 数値収束",
+      "run_id": 36294673120
+    },
+    {
+      "name": "発音管数 scaling",
+      "run_id": 36294673213
+    },
+    {
+      "name": "物理パラメータ sensitivity",
+      "run_id": 36294673071
+    },
+    {
+      "name": "fine grid",
+      "run_id": 36294673042
+    },
+    {
+      "name": "hysteresis diagnostic",
+      "run_id": 36294673016
+    },
+    {
+      "name": "mouth-pressure attack",
+      "run_id": 36294819936
+    },
+    {
+      "name": "audio render",
+      "run_id": 36294819923
+    },
+    {
+      "name": "mouth→kashira transfer curve",
+      "run_id": 36294819903
+    },
+    {
+      "name": "ringdown diagnostic",
+      "run_id": 36294819880
+    },
+    {
+      "name": "random active-set stress",
+      "run_id": 36294819876
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "tmp-sho-pages-index-v2",
+  "project": "tmp-sho",
+  "canonical_project": "2rwa/audio-synthesis-lab/projects/sho-physical-synth",
+  "base_url": "https://2rwa.github.io/tmp-sho/",
+  "datasets": [
+    {
+      "task": "blow-draw-asymmetry",
+      "run_id": "36289326612",
+      "source_commit": "c6a610359f628afdfd017498a26b3c2753c78f63",
+      "path": "data/blow-draw-asymmetry/36289326612/",
+      "files": [
+        "summary.json",
+        "summary.csv",
+        "index.html"
+      ],
+      "latest": "data/blow-draw-asymmetry/latest.json"
+    },
+    {
+      "task": "kashira-coupling",
+      "run_id": "36294445800",
+      "source_commit": "0d5ec795b608428883b95d250c3479d989984813",
+      "path": "data/kashira-coupling/36294445800/",
+      "files": [
+        "summary.json",
+        "summary.csv",
+        "index.html"
+      ],
+      "latest": "data/kashira-coupling/latest.json"
+    },
+    {
+      "task": "public-research-snapshot",
+      "run_id": "20260927",
+      "source_commit": "d1e6f84d8608a43000839ede452898db7a0ef58a",
+      "path": "data/public/",
+      "files": [
+        "manifest.json",
+        "research-snapshot.json",
+        "threshold-census.json",
+        "chord-census.json",
+        "numerical-convergence.json",
+        "diagnostics.json"
+      ]
+    }
+  ],
+  "notes": [
+    "Large intermediates remain in GitHub Actions artifacts.",
+    "Run-ID paths should be treated as immutable provenance URLs."
+  ],
+  "public_pages": {
+    "home": "index.html",
+    "experiments": "experiments.html",
+    "references": "references.html",
+    "manifest": "data/public/manifest.json",
+    "audio_path": "audio/"
+  }
+}
