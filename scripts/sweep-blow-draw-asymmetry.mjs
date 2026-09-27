@@ -276,7 +276,7 @@ for (const variant of variants) {
     blow_onset_f0_hz: blow.onset?.estimated_f0_hz ?? null,
     draw_onset_f0_hz: draw.onset?.estimated_f0_hz ?? null,
     blow_error_pa: blowError,
-    draw_error_pa: draw.error_pa,
+    draw_error_pa: drawError,
     total_abs_error_pa: blowError + drawError,
     probes: { blow: blow.probes, draw: draw.probes }
   });
@@ -290,4 +290,44 @@ if (baseline.blow_threshold_pa === null || baseline.blow_threshold_pa <= 200 || 
   throw new Error(`baseline onset no longer brackets the canonical coarse regression (200 Pa off, 300 Pa on): ${baseline?.blow_threshold_pa}`);
 }
 
-const ranked = [...results].sort((a, b) => a.total_abs_error_pa - b.total_absˆW'&˜%˜ì∞¶6ˆÁ7B˜WDFó$&r“&ˆ6W72Ê&wbÊfñÊBáÇ”‚ÇÁ7F'G5vóFÇÇr“÷˜WC“ríì∞¶6ˆÁ7B˜WDFó"“FÇÁ&W6ˆ«fRÜ˜WDFó$&rÚ˜WDFó$&rÁ6∆ñ6RÉbí¢w&W7V«G2rì∞¶g2Ê÷∂Fó%7ñÊ2Ü˜WDFó"¬≤&V7W'6ófS¢G'VR“ì∞†¶6ˆÁ7B7V÷÷'í“∞¢66ÜV÷¢w6ÜÚ÷&∆˜r÷G&r÷7ñ÷÷WG'í◊7vVW◊c"r¿¢'VÂˆñC¢&ˆ6W72ÊVÁb‰tïDÖT%ı%TÂÙîB«¬ÁV∆¬¿¢6ˆ◊WFU˜&Wıˆ6ˆ÷÷óC¢&ˆ6W72ÊVÁb‰tïDÖT%ı4Ñ«¬ÁV∆¬¿¢÷ˆFS¢Vñ6¥÷ˆFRÚwVñ6≤r¢vgV∆¬r¿¢F6≥¢v&∆˜r÷G&r÷7ñ÷÷WG'ír¿¢6˜W&6Uˆ6ˆ÷÷óC¢4ıU$4UÙ4Ù‘‘ïB¿¢6˜W&6UˆáF÷≈ˆ&∆ˆ#¢4ıU$4UÙÖD‘≈Ù$ƒÙ"¿¢vVÊW&FVEˆC¢ÊWrFFRÇíÁFÙï4ı7G&ñÊrÇí¿¢ñÁWEˆFW67&óFñˆ„¢u6ñÊv∆Rñ6ÜíóR¬CÇ¥á¢¬"2&VÊFW'2¬7W'&VÁBc„&6V∆ñÊR«W2GvÚ÷ñÊñ÷¬7ñ÷÷WG'íFW&◊2‚r¿¢∆óFW&GW&Uˆ&6ó3¢∞¢Fˆì¢s„#Û„S3CcRr¿¢7FFV÷VÁC¢tÜñ∂ñ6ÜíWB¬‚&W˜'B∆˜vW"ÊVvFófR◊&W77W&RFá&W6Üˆ∆B¬Ê˜FR6÷∆¬&VVB7ñ÷÷WG'íÊBW7G&V“ˆF˜vÁ7G&V“6ˆÊfñwW&Fñˆ‚¬ÊB7FFRFÜBFÜR&VVB&6≤ó26∆ñváF«í6Üó6V∆VB6ÚóB∆VfW2FÜR6∆˜B÷˜&RV6ñ«ívÜñ∆RG&vñÊr‚p¢“¿¢F&vWE˜Fá&W6Üˆ∆E˜¢D$tUB¿¢&6V∆ñÊU˜Fá&W6Üˆ∆E˜¢≤&∆˜s¢&6V∆ñÊRÊ&∆˜u˜Fá&W6Üˆ∆E˜¬G&s¢&6V∆ñÊRÊG&u˜Fá&W6Üˆ∆E˜“¿¢7ñ÷÷WG'ï˜FW&◊3¢∞¢G&tW66U66∆S¢u6ñvÊVB÷Fó7∆6V÷VÁBW'GW&R66∆ñÊrˆ‚FÜRÊVvFófRˆFó7∆6V÷VÁB6ñFR‚„&W&ˆGV6W2FÜRWfV‚báÇí&6V∆ñÊS≤„÷∂W2FÜR&VVB∆VfRFÜR6∆˜Bf7FW"ˆ‚FÜRG&r÷ff˜W&VB6ñFRvóFÜ˜WB6ÜÊvñÊr&W7B6∆V&Ê6R‚r¿¢G&t6ˆÁG&7FñˆÂ&FñÛ¢t◊V«Fó∆ñW"ˆ‚&W&Ê˜V∆∆í6ˆÁG&7Fñˆ‚6ˆVffñ6ñVÁB2vÜV‚ñÁ7FÁFÊV˜W2&W77W&RFñffW&VÊ6Ró2ÊVvFófR¬&W&W6VÁFñÊrW7G&V“ˆF˜vÁ7G&V“f∆˜r÷6ˆÊfñwW&Fñˆ‚7ñ÷÷WG'í‚p¢“¿¢&÷WFW%ˆw&ñC¢Vñ6¥÷ˆFRÚwVñ6≤&Vf∆ñváBw&ñBr¢≤&VVE•≥Ç√√"√R√#“¬÷75&FS•≥√„R√„3“¬G&tW66U66∆S•≥√„#R√„R√%“¬G&t6ˆÁG&7FñˆÂ&FñÛ•≥√„#R√„U““¿¢Fá&W6Üˆ∆E˜6V&6É¢s36ˆ'6R66‚g&ˆ“3‚„c≤FÜV‚R&VfñÊV÷VÁBvóFÜñ‚FÜRfó'7B˜66ñ∆∆FñÊr'&6∂WC≤6÷R˜66ñ∆∆Fñˆ‚ÜWW&ó7Fñ226ÊˆÊñ6¬&Vw&W76ñˆ‚‚r¿¢&Ê∂VC¢&Ê∂VBÊ÷Çá∑&ˆ&W2¬‚‚Áá“í”‚Çêß”∞¶g2Áw&óFTfñ∆U7ñÊ2áFÇÊ¶ˆñ‚Ü˜WDFó"¬w7V÷÷'íÊß6ˆ‚rí¬•4Ù‚Á7G&ñÊvñgíá7V÷÷'í¬ÁV∆¬¬"í≤u∆‚rì∞¶g2Áw&óFTfñ∆U7ñÊ2áFÇÊ¶ˆñ‚Ü˜WDFó"¬vgV∆¬Êß6ˆ‚rí¬•4Ù‚Á7G&ñÊvñgíá≤‚‚Á7V÷÷'í¬f&ñÁG3¢&W7V«G7“¬ÁV∆¬¬"í≤u∆‚rì∞†¶6ˆÁ7B77dfñV∆G2“≤vñBr¬vf÷ñ«ír¬w&VVEr¬v÷75&FRr¬vG&tW66U66∆Rr¬vG&t6ˆÁG&7FñˆÂ&FñÚr¬v&∆˜u˜Fá&W6Üˆ∆E˜r¬vG&u˜Fá&W6Üˆ∆E˜r¬v&∆˜uˆˆÁ6WEˆcˆá¢r¬vG&uˆˆÁ6WEˆcˆá¢r¬v&∆˜uˆW'&˜%˜r¬vG&uˆW'&˜%˜r¬wF˜F≈ˆ'5ˆW'&˜%˜u”∞¶6ˆÁ7B77b“∂77dfñV∆G2Ê¶ˆñ‚Çr¬rï“Ê6ˆÊ6Bá&Ê∂VBÊ÷á"”‚77dfñV∆G2Ê÷Ü≤”‚%∂µ“ÛÚrríÊ¶ˆñ‚Çr¬ríííÊ¶ˆñ‚Çu∆‚rí≤u∆‚s∞¶g2Áw&óFTfñ∆U7ñÊ2áFÇÊ¶ˆñ‚Ü˜WDFó"¬w7V÷÷'íÊ77brí¬77bì∞†¶6ˆÁ7B&˜w2“&Ê∂VBÊ÷á"”‚«G#„«FC‚G∑"ÊñG”¬˜FC„«FC‚G∑"Êf÷ñ«ó”¬˜FC„«FC‚G∑"Á&VVE”¬˜FC„«FC‚G∑"Ê÷75&FW”¬˜FC„«FC‚G∑"ÊG&tW66U66∆W”¬˜FC„«FC‚G∑"ÊG&t6ˆÁG&7FñˆÂ&Fñ˜”¬˜FC„«FC‚G∑"Ê&∆˜u˜Fá&W6Üˆ∆E˜ÛÚr“w”¬˜FC„«FC‚G∑"ÊG&u˜Fá&W6Üˆ∆E˜ÛÚr“w”¬˜FC„«FC‚G∑"Ê&∆˜uˆˆÁ6WEˆcˆá£ÚÁFÙfóÜVBÉíÛÚr“w”¬˜FC„«FC‚G∑"ÊG&uˆˆÁ6WEˆcˆá£ÚÁFÙfóÜVBÉíÛÚr“w”¬˜FC„«FC‚G∑"ÁF˜F≈ˆ'5ˆW'&˜%˜”¬˜FC„¬˜G#ÊíÊ¶ˆñ‚Çrrì∞¶6ˆÁ7BáF÷¬“¬Fˆ7GóRáF÷√„∆áF÷√„∆ÜVC„∆÷WF6Ü'6WC“'WFb”Ç#„∆÷WFÊ÷S“'fñWw˜'B"6ˆÁFVÁC“'vñGFÉ÷FWfñ6R◊vñGFÇ∆ñÊóFñ¬◊66∆S”#„«FóF∆SÂ6åX“&∆˜rˆG&r7ñ÷÷WG'í7vVW¬˜FóF∆S„«7Gñ∆SÊ&ˆGó∂fˆÁB÷f÷ñ«ìß7ó7FV“◊Ví«6Á2◊6W&ñc∂÷Ç◊vñGFÉ£É∂÷&vñ„£'&V“WFÛ∑FFñÊs£&V◊◊F&∆W∂&˜&FW"÷6ˆ∆∆6S¶6ˆ∆∆6S∑vñGFÉ£S∂fˆÁB◊6ó¶S¢„ó&V◊◊FÇ«FG∂&˜&FW"÷&˜GFˆ”£Ç6ˆ∆ñB6FFC∑FFñÊs¢„CW&V”∑FWáB÷∆ñv„ß&ñváG◊FÉ¶fó'7B÷6Üñ∆B«FC¶fó'7B÷6Üñ∆G∑FWáB÷∆ñv„¶∆VgG÷6ˆFW∂&6∂w&˜VÊC¢6c6c6c3∑FFñÊs¢„&V“„7&V◊”¬˜7Gñ∆S„¬ˆÜVC„∆&ˆGì„∆ÉÂ6åX“&∆˜rˆG&r7ñ÷÷WG'í7vVW¬ˆÉ„«ÂF&vWC¢&∆˜r„3s¬G&r„ì‚FÜR6ÊˆÊñ6¬6ˆ'6R&Vw&W76ñˆ‚fó'7BFWFV7G2ˆÁ6WBB3≤FÜó27vVW&VfñÊW2FÜR#(	33'&6∂WBñ‚R7FW2„¬˜„«„∆6ˆFSÊG&tW66U66∆S¬ˆ6ˆFS‚÷ˆFV«2FÜR6Üó6V∆VB◊&VVBvVˆ÷WG&ñ2W66R7ñ÷÷WG'ì≤∆6ˆFSÊG&t6ˆÁG&7FñˆÂ&FñÛ¬ˆ6ˆFS‚÷ˆFV«2W7G&V“ˆF˜vÁ7G&V“f∆˜r6ˆÁG&7Fñˆ‚7ñ÷÷WG'í„¬˜„«F&∆S„«FÜVC„«G#„«FÉÁf&ñÁC¬˜FÉ„«FÉÊf÷ñ«ì¬˜FÉ„«FÉÂ¬˜FÉ„«FÉÊ÷73¬˜FÉ„«FÉÊW66S¬˜FÉ„«FÉ‰2&FñÛ¬˜FÉ„«FÉÊ&∆˜r¬˜FÉ„«FÉÊG&r¬˜FÉ„«FÉÊ&∆˜rc¬˜FÉ„«FÉÊG&rc¬˜FÉ„«FÉÁ∆W'&˜'¬¬˜FÉ„¬˜G#„¬˜FÜVC„«F&ˆGì‚G∑&˜w7”¬˜F&ˆGì„¬˜F&∆S„¬ˆ&ˆGì„¬ˆáF÷√Ê∞¶g2Áw&óFTfñ∆U7ñÊ2áFÇÊ¶ˆñ‚Ü˜WDFó"¬vñÊFWÇÊáF÷¬rí¬áF÷¬ì∞†ß&ˆ6W72Á7FF˜WBÁw&óFRÑ•4Ù‚Á7G&ñÊvñgíá∂&6V∆ñÊS¢7V÷÷'íÊ&6V∆ñÊU˜Fá&W6Üˆ∆E˜¬F˜S¢7V÷÷'íÁ&Ê∂VBÁ6∆ñ6RÉ√Ró“¬ÁV∆¬¬"í≤u∆‚rì∞
+const ranked = [...results].sort((a, b) => a.total_abs_error_pa - b.total_abs_error_pa);
+const outDirArg = process.argv.find(x => x.startsWith('--out='));
+const outDir = path.resolve(outDirArg ? outDirArg.slice(6) : 'results');
+fs.mkdirSync(outDir, { recursive: true });
+
+const summary = {
+  schema: 'sho-blow-draw-asymmetry-sweep-v2',
+  run_id: process.env.GITHUB_RUN_ID || null,
+  compute_repo_commit: process.env.GITHUB_SHA || null,
+  mode: quickMode ? 'quick' : 'full',
+  task: 'blow-draw-asymmetry',
+  source_commit: SOURCE_COMMIT,
+  source_html_blob: SOURCE_HTML_BLOB,
+  generated_at: new Date().toISOString(),
+  input_description: 'Single ichi pipe, 48 kHz, 2 s renders, current v0.1 baseline plus two minimal asymmetry terms.',
+  literature_basis: {
+    doi: '10.1121/1.1534605',
+    statement: 'Hikichi et al. report lower negative-pressure threshold, note small reed asymmetry and upstream/downstream configuration, and state that the reed back is slightly chiseled so it leaves the slot more easily while drawing.'
+  },
+  target_threshold_pa: TARGET,
+  baseline_threshold_pa: { blow: baseline.blow_threshold_pa, draw: baseline.draw_threshold_pa },
+  asymmetry_terms: {
+    drawEscapeScale: 'Signed-displacement aperture scaling on the negative/displacement side. 1.0 reproduces the even F(x) baseline; >1 makes the reed leave the slot faster on the draw-favoured side without changing rest clearance.',
+    drawContractionRatio: 'Multiplier on Bernoulli contraction coefficient C when instantaneous pressure difference is negative, representing upstream/downstream flow-configuration asymmetry.'
+  },
+  parameter_grid: quickMode ? 'quick preflight grid' : { reedQ:[8,10,12,15,20], massRate:[0,0.15,0.30], drawEscapeScale:[1,1.25,1.5,2], drawContractionRatio:[1,1.25,1.5] },
+  threshold_search: '30 Pa coarse scan from 30..600 Pa; then 5 Pa refinement within the first oscillating bracket; same oscillation heuristic as canonical regression.',
+  ranked: ranked.map(({probes, ...x}) => x)
+};
+fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
+fs.writeFileSync(path.join(outDir, 'full.json'), JSON.stringify({...summary, variants: results}, null, 2) + '\n');
+
+const csvFields = ['id','family','reedQ','massRate','drawEscapeScale','drawContractionRatio','blow_threshold_pa','draw_threshold_pa','blow_onset_f0_hz','draw_onset_f0_hz','blow_error_pa','draw_error_pa','total_abs_error_pa'];
+const csv = [csvFields.join(',')].concat(ranked.map(r => csvFields.map(k => r[k] ?? '').join(','))).join('\n') + '\n';
+fs.writeFileSync(path.join(outDir, 'summary.csv'), csv);
+
+const rows = ranked.map(r => `<tr><td>${r.id}</td><td>${r.family}</td><td>${r.reedQ}</td><td>${r.massRate}</td><td>${r.drawEscapeScale}</td><td>${r.drawContractionRatio}</td><td>${r.blow_threshold_pa ?? '-'}</td><td>${r.draw_threshold_pa ?? '-'}</td><td>${r.blow_onset_f0_hz?.toFixed(1) ?? '-'}</td><td>${r.draw_onset_f0_hz?.toFixed(1) ?? '-'}</td><td>${r.total_abs_error_pa}</td></tr>`).join('');
+const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sh≈ç blow/draw asymmetry sweep</title><style>body{font-family:system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border-bottom:1px solid #ddd;padding:.45rem;text-align:right}th:first-child,td:first-child{text-align:left}code{background:#f3f3f3;padding:.1rem .3rem}</style></head><body><h1>Sh≈ç blow/draw asymmetry sweep</h1><p>Target: blow ~370 Pa, draw ~90 Pa. The canonical coarse regression first detects onset at 300 Pa; this sweep refines the 200‚Äì300 Pa bracket in 5 Pa steps.</p><p><code>drawEscapeScale</code> models the chiseled-reed geometric escape asymmetry; <code>drawContractionRatio</code> models upstream/downstream flow contraction asymmetry.</p><table><thead><tr><th>variant</th><th>family</th><th>Q</th><th>mass</th><th>escape</th><th>C ratio</th><th>blow Pa</th><th>draw Pa</th><th>blow f0</th><th>draw f0</th><th>|error| Pa</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+fs.writeFileSync(path.join(outDir, 'index.html'), html);
+
+process.stdout.write(JSON.stringify({baseline: summary.baseline_threshold_pa, top5: summary.ranked.slice(0,5)}, null, 2) + '\n');
