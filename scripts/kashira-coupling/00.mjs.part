@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+
+const sampleRate = 48000;
+const dt = 1 / sampleRate;
+const SOURCE_COMMIT = '6c1fcfcdc2214dfcc98740ce798f7733708ee4bd';
+const rho = 1.2;
+const c = 340.0;
+
+const NOTE_DEFS = [
+  {name:'乞',freq:430.0,reedRatio:0.990},
+  {name:'一',freq:483.75,reedRatio:470.0/483.75},
+  {name:'工',freq:544.21875,reedRatio:0.980},
+  {name:'凢',freq:573.3333333,reedRatio:0.985},
+  {name:'乙',freq:645.0,reedRatio:0.980},
+  {name:'下',freq:725.625,reedRatio:0.980},
+  {name:'十',freq:765.3076172,reedRatio:0.975},
+  {name:'美',freq:816.328125,reedRatio:0.975},
+  {name:'行',freq:860.0,reedRatio:0.975},
+  {name:'七',freq:967.5,reedRatio:0.975},
+  {name:'比',freq:1020.4101563,reedRatio:0.970},
+  {name:'言',freq:1088.4375,reedRatio:0.970},
+  {name:'上',freq:1147.9614258,reedRatio:0.965},
+  {name:'八',freq:1290.0,reedRatio:0.965},
+  {name:'千',freq:1451.25,reedRatio:0.960}
+];
+
+const CHORD = ['一','凢','乙','行','七','千'];
+const baseParams = {
+  reedQ: 12,
+  massRate: 0.30,
+  drawEscapeScale: 2.25,
+  drawContractionRatio: 1.50,
+  reflection: 0.985,
+  pipeScale: 1.0,
+  reedCents: 0,
+  transitionMs: 30,
+  master: 0.28
+};
+
+class ShoPipeModel {
+  constructor(note) {
+    this.note = note;
+    this.reedWidth = 0.002;
+    this.reedLength = 0.010;
+    this.reedThickness = 0.0003;
+    this.reedDensity = 8000.0;
+    this.clearance = 0.00001;
+    this.flowContraction = 0.61;
+    this.pipeRadius = 0.0035;
+    this.characteristicImpedance = rho * c / (Math.PI * this.pipeRadius * this.pipeRadius);
+    this.referencePitch = 483.75;
+    this.referencePipeLength = 0.241;
+    this.tipDisplacement = 0;
+    this.tipVelocity = 0;
+    this.returnState = 0;
+    this.previousWave = 0;
+    this.dcBlockState = 0;
+    this.gate = 0;
+    this.gateTarget = 1;
+    this.delayBuffer = new Float64Array(512);
+    this.writeIndex = 0;
+    this.lastNetInputFlow = 0;
+    this.lastRadiation = 0;
+  }
+
+  renderOne(sourcePressure, params) {
+    const transitionSeconds = Math.max(0.015, params.transitionMs * 0.001);
+    const gateCoefficient = 1.0 - Math.exp(-dt / transitionSeconds);
+    this.gate += (this.gateTarget - this.gate) * gateCoefficient;
+
+    const reedFrequency = this.note.freq * this.note.reedRatio;
+    const reedOmega = 2 * Math.PI * reedFrequency;
+    const baseMass = this.reedDensity * this.reedWidth * this.reedLength * this.reedThickness * (1 + params.massRate);
+    const effectiveMass = baseMass * Math.pow(470.0 / reedFrequency, 2);
+
+    const pipeLength = this.referencePipeLength * (this.referencePitch / this.note.freq) * params.pipeScale;
+    const delaySamples = Math.max(2, 2 * pipeLength / c * sampleRate);
+    let readPosition = this.writeIndex - delaySamples;
+    while (readPosition < 0) readPosition += this.delayBuffer.length;
+    const i0 = Math.floor(readPosition) % this.delayBuffer.length;
+    const frac = readPosition - Math.floor(readPosition);
+    const i1 = (i0 + 1) % this.delayBuffer.length;
+    const delayedWave = this.delayBuffer[i0] * (1 - frac) + this.delayBuffer[i1] * frac;
+
+    const effectiveReflection = 0.025 + this.gate * (params.reflection - 0.025);
+    const reflectedTarget = -effectiveReflection * delayedWave;
+    this.returnState += 0.62 * (reflectedTarget - this.returnState);
+    const returnedPressure = this.returnState;
+
+    const escapeScale = this.tipDisplacement < 0 ? params.drawEscapeScale : 1;
+    const apertureDisplacement = this.tipDisplacement * escapeScale;
+    const sideAverage = 0.4 * Math.abs(apertureDisplacement);
+    const openingArea = this.reedWidth * Math.sqrt(apertureDisplacement * apertureDisplacement + this.clearance * this.clearance)
+      + 2 * this.reedLength * Math.sqrt(sideAverage * sideAverage + this.clearance * this.clearance);
+    const pumpedFlow = 0.4 * this.reedWidth * this.reedLength * this.tipVelocity;
+
+    let pipeEntrancePressure = returnedPressure;
+    let flowVelocity = 0;
+    for (let iteration = 0; iteration < 4; iteration++) {
+      const pressureDifference = sourcePressure - pipeEntrancePressure;
+      const absolutePressure = Math.max(Math.abs(pressureDifference), 1e-5);
+      const pressureSign = pressureDifference >= 0 ? 1 : -1;
+      const contraction = this.flowContraction * (pressureSign < 0 ? params.drawContractionRatio : 1);
+      const flowFactor = contraction * openingArea * Math.sqrt(2 / rho);
+      flowVelocity = flowFactor * pressureSign * Math.sqrt(absolutePressure);
+      const residual = p

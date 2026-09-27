@@ -1,0 +1,92 @@
+name: Shō shared kashira sweep
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/kashira-coupling/**"
+      - ".github/workflows/kashira-coupling.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Assemble sweep script
+        run: |
+          cat scripts/kashira-coupling/*.mjs.part > /tmp/sweep-kashira-coupling.mjs
+          node --check /tmp/sweep-kashira-coupling.mjs
+
+      - name: Sync main before generating results
+        run: git pull --rebase origin main
+
+      - name: Run shared-kashira parameter sweep
+        run: node /tmp/sweep-kashira-coupling.mjs --out=results-kashira
+
+      - name: Upload full sweep artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sho-kashira-coupling-${{ github.run_id }}
+          path: results-kashira/
+          retention-days: 14
+
+      - name: Publish compact Pages result
+        if: success()
+        env:
+          RUN_ID: ${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            dest="data/kashira-coupling/${RUN_ID}"
+            mkdir -p "$dest"
+            cp results-kashira/summary.json "$dest/summary.json"
+            cp results-kashira/summary.csv "$dest/summary.csv"
+            cp results-kashira/index.html "$dest/index.html"
+            mkdir -p data/kashira-coupling
+            cp results-kashira/summary.json data/kashira-coupling/latest.json
+
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('data/index.json')
+          data = json.loads(p.read_text())
+          run_id = os.environ['RUN_ID']
+          entry = {
+              'task': 'kashira-coupling',
+              'run_id': run_id,
+              'source_commit': os.environ['SOURCE_SHA'],
+              'path': f'data/kashira-coupling/{run_id}/',
+              'files': ['summary.json', 'summary.csv', 'index.html'],
+              'latest': 'data/kashira-coupling/latest.json'
+          }
+          datasets = [x for x in data.get('datasets', []) if x.get('task') != entry['task']]
+          datasets.append(entry)
+          data['datasets'] = datasets
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+
+            git add data/index.json data/kashira-coupling
+            git commit -m "Publish shō kashira coupling sweep ${RUN_ID}"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push raced with another writer; rebuilding on latest main (attempt ${attempt})"
+          done
+          exit 1

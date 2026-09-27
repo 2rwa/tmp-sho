@@ -72,10 +72,43 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/index.json data/blow-draw-asymmetry
-          if git diff --cached --quiet; then
-            echo "No compact result changes to publish"
-            exit 0
-          fi
-          git commit -m "Publish shō blow/draw asymmetry sweep ${RUN_ID}"
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            dest="data/blow-draw-asymmetry/${RUN_ID}"
+            mkdir -p "$dest"
+            cp results/summary.json "$dest/summary.json"
+            cp results/summary.csv "$dest/summary.csv"
+            cp results/index.html "$dest/index.html"
+            cp results/summary.json data/blow-draw-asymmetry/latest.json
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('data/index.json')
+          data = json.loads(p.read_text())
+          run_id = os.environ['RUN_ID']
+          entry = {
+              'task': 'blow-draw-asymmetry',
+              'run_id': run_id,
+              'source_commit': os.environ['SOURCE_SHA'],
+              'path': f'data/blow-draw-asymmetry/{run_id}/',
+              'files': ['summary.json', 'summary.csv', 'index.html'],
+              'latest': 'data/blow-draw-asymmetry/latest.json'
+          }
+          datasets = [x for x in data.get('datasets', []) if x.get('task') != entry['task']]
+          datasets.append(entry)
+          data['datasets'] = datasets
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+            git add data/index.json data/blow-draw-asymmetry
+            if git diff --cached --quiet; then
+              echo "No compact result changes to publish"
+              exit 0
+            fi
+            git commit -m "Publish shō blow/draw asymmetry sweep ${RUN_ID}"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push raced with another writer; rebuilding on latest main (attempt ${attempt})"
+          done
+          exit 1

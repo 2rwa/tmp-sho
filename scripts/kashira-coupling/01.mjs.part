@@ -1,0 +1,106 @@
+ipeEntrancePressure - returnedPressure - this.characteristicImpedance * (flowVelocity + pumpedFlow);
+      const derivative = 1 + this.characteristicImpedance * flowFactor * 0.5 / Math.sqrt(absolutePressure);
+      pipeEntrancePressure -= residual / derivative;
+    }
+
+    const finalDifference = sourcePressure - pipeEntrancePressure;
+    const finalSign = finalDifference >= 0 ? 1 : -1;
+    const finalContraction = this.flowContraction * (finalSign < 0 ? params.drawContractionRatio : 1);
+    const finalFlowFactor = finalContraction * openingArea * Math.sqrt(2 / rho);
+    flowVelocity = finalFlowFactor * finalSign * Math.sqrt(Math.max(Math.abs(finalDifference), 0));
+
+    const pressureForce = (1.5 * this.reedWidth * this.reedLength / effectiveMass) * (sourcePressure - pipeEntrancePressure);
+    const dampingForce = (reedOmega / params.reedQ) * this.tipVelocity;
+    const restoringForce = reedOmega * reedOmega * this.tipDisplacement;
+    const tipAcceleration = pressureForce - dampingForce - restoringForce;
+    this.tipVelocity += tipAcceleration * dt;
+    this.tipDisplacement += this.tipVelocity * dt;
+    if (!Number.isFinite(this.tipDisplacement) || Math.abs(this.tipDisplacement) > 0.0025) {
+      this.tipDisplacement = Math.max(-0.0025, Math.min(0.0025, Number.isFinite(this.tipDisplacement) ? this.tipDisplacement : 0));
+      this.tipVelocity *= 0.15;
+    }
+
+    const netInputFlow = flowVelocity + 0.4 * this.reedWidth * this.reedLength * this.tipVelocity;
+    const outgoingWave = pipeEntrancePressure + this.characteristicImpedance * netInputFlow;
+    this.delayBuffer[this.writeIndex] = outgoingWave;
+    this.writeIndex = (this.writeIndex + 1) % this.delayBuffer.length;
+
+    const acWave = outgoingWave - this.previousWave + 0.995 * this.dcBlockState;
+    this.previousWave = outgoingWave;
+    this.dcBlockState = acWave;
+    this.lastNetInputFlow = netInputFlow * this.gate;
+    this.lastRadiation = acWave * this.gate;
+    return this.lastRadiation;
+  }
+}
+
+function rms(values) {
+  let s = 0;
+  for (const x of values) s += x * x;
+  return Math.sqrt(s / Math.max(1, values.length));
+}
+
+function std(values) {
+  if (!values.length) return 0;
+  const mean = values.reduce((a,b)=>a+b,0) / values.length;
+  let s = 0;
+  for (const x of values) s += (x - mean) * (x - mean);
+  return Math.sqrt(s / values.length);
+}
+
+function runCase({names, pressure, direction, shared, volumeMl=100, recoveryMs=5, duration=2.5}) {
+  const pipes = NOTE_DEFS.filter(n => names.includes(n.name)).map(n => new ShoPipeModel(n));
+  const totalSamples = Math.floor(sampleRate * duration);
+  const collectStart = Math.floor(totalSamples * 0.6);
+  let mouthPressure = 0;
+  let kashiraPressure = 0;
+  const pressureTau = 0.060;
+  const pressureCoeff = 1 - Math.exp(-dt / pressureTau);
+  const compliance = volumeMl * 1e-6 / (rho * c * c);
+  const recoveryTau = Math.max(0.00025, recoveryMs * 0.001);
+  const perPipe = new Map(pipes.map(p => [p.note.name, []]));
+  const kSeries = [];
+  const mouthSeries = [];
+  const flowSeries = [];
+  let finite = true;
+  let peakK = 0;
+
+  for (let i = 0; i < totalSamples; i++) {
+    const target = direction * pressure;
+    mouthPressure += (target - mouthPressure) * pressureCoeff;
+    const sourcePressure = shared ? kashiraPressure : mouthPressure;
+
+    let sumFlow = 0;
+    for (const pipe of pipes) {
+      pipe.renderOne(sourcePressure, baseParams);
+      sumFlow += pipe.lastNetInputFlow;
+      if (i >= collectStart) perPipe.get(pipe.note.name).push(pipe.lastRadiation * 0.00062);
+    }
+
+    if (shared) {
+      const qMouth = (mouthPressure - kashiraPressure) * compliance / recoveryTau;
+      const dpdt = (qMouth - sumFlow) / compliance;
+      kashiraPressure += dpdt * dt;
+      if (!Number.isFinite(kashiraPressure) || Math.abs(kashiraPressure) > 5000) {
+        finite = false;
+        break;
+      }
+    } else {
+      kashiraPressure = mouthPressure;
+    }
+
+    peakK = Math.max(peakK, Math.abs(kashiraPressure));
+    if (i >= collectStart) {
+      kSeries.push(kashiraPressure);
+      mouthSeries.push(mouthPressure);
+      flowSeries.push(sumFlow);
+    }
+  }
+
+  const pipeMetrics = {};
+  for (const [name, values] of perPipe) {
+    const valueRms = rms(values);
+    pipeMetrics[name] = {rms:valueRms, oscillating:valueRms > 1e-5};
+  }
+  const meanAbsK = kSeries.length ? kSeries.reduce((a,x)=>a+Math.abs(x),0)/kSeries.length : null;
+  const meanAbsMouth = mouthSeries.length ? mouthSeries.reduce((a,x)=>a+Math.abs(x),0)/mouthSeries.length : nul
